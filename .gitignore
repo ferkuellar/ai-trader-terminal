@@ -1,0 +1,47 @@
+# Dependencies
+node_modules/
+
+# Next.js
+.next/
+out/
+next-env.d.ts
+
+# Production/build artifacts
+dist/
+build/
+coverage/
+
+# Local env/secrets
+.env
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+
+# Local app data
+data/*.json
+*.db
+*.db-journal
+*.sqlite
+*.sqlite3
+
+# Logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+.next-dev.log
+.next-dev.err.log
+
+# OS/editor
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
+
+# Local screenshots / generated prompt images
+image/
+
+# Local backups
+*.legacy.jsx
