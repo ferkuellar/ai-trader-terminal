@@ -211,6 +211,179 @@ const INTERVALS = [
   { id: '1w',  label: '1W'  },
 ];
 
+const I18N = {
+  es: {
+    loadingTerminal: '// INICIANDO TERMINAL...',
+    connectingBinance: '// CONECTANDO A BINANCE PUBLIC API...',
+    currentCapital: 'CAPITAL ACTUAL',
+    goal: 'META',
+    completed: 'completado',
+    dashboard: 'DASH',
+    markets: 'MARKETS',
+    chart: 'CHART',
+    analyst: 'ANALYST',
+    challenges: 'RETOS',
+    newTrade: 'NUEVO',
+    journal: 'JOURNAL',
+    stats: 'STATS',
+    settings: 'CONFIG',
+    activeChallenge: 'RETO ACTIVO',
+    progress: 'PROGRESO',
+    dailyDd: 'DAILY DD',
+    totalDd: 'TOTAL DD',
+    used: 'usado',
+    achievements: 'LOGROS',
+    noTradesTitle: '// SISTEMA INICIADO',
+    noTradesBody: 'No tenés trades registrados todavía.',
+    currentRiskPerTrade: 'Tu riesgo por trade actual es',
+    exploreMarkets: 'EXPLORAR MARKETS',
+    guardrailViolated: '// GUARDRAIL VIOLADO',
+    exposedRisk: 'Riesgo expuesto',
+    limit: 'límite',
+    openPositions: 'posiciones abiertas',
+    max: 'máximo',
+    performanceTerminal: 'PERFORMANCE TERMINAL',
+    totalTrades: 'TOTAL TRADES',
+    closed: 'cerrados',
+    open: 'abiertos',
+    winRate: 'WIN RATE',
+    noSample: 'sin muestra',
+    profitFactor: 'PROFIT FACTOR',
+    grossRatio: 'gross win / gross loss',
+    avgR: 'R PROMEDIO',
+    perClosedTrade: 'por trade cerrado',
+    totalPnl: 'P&L TOTAL',
+    equity: 'equity',
+    openRisk: 'RIESGO ABIERTO',
+    capitalPct: 'del capital',
+    planCompliance: 'CUMPL. PLAN',
+    operatingDiscipline: 'disciplina operativa',
+    remainingGoal: 'META RESTANTE',
+    pending: 'pendiente',
+    equityCurve: 'EQUITY CURVE',
+    equityCurveSub: 'Capital a lo largo del tiempo',
+    openPositionsPanel: 'POSICIONES ABIERTAS',
+    lastClosedTrades: 'ÚLTIMOS TRADES CERRADOS',
+    trainingCommandCenter: 'TRAINING COMMAND CENTER',
+    processDisciplineAction: 'Proceso, disciplina y siguiente acción',
+    seeChallenges: 'VER RETOS',
+    readinessScore: 'READINESS SCORE',
+    disciplineLevel: 'DISCIPLINE LEVEL',
+    mistakeTax: 'MISTAKE TAX',
+    nextBestChallenge: 'NEXT BEST CHALLENGE',
+    riskRemainingToday: 'RISK REMAINING TODAY',
+    dailyBudget: 'Daily budget',
+    planComplianceCheck: 'Plan compliance',
+    riskRoomToday: 'Risk room today',
+    openRiskWithinLimit: 'Open risk within limit',
+    activeChallengeSafe: 'Active challenge safe',
+    enoughProcessData: 'Enough process data',
+    noTrade: 'NO TRADE',
+    caution: 'CAUTION',
+    ready: 'READY',
+    confidenceRegistro: 'Registro',
+    confidenceDisciplina: 'Disciplina',
+    confidenceRiesgo: 'Riesgo',
+    confidenceConsistencia: 'Consistencia',
+    confidenceEscalamiento: 'Escalamiento',
+    noData: 'Sin muestra',
+    nextDiscipline10Name: '10 Trades con Plan',
+    nextDiscipline10ReasonLowSample: 'Necesitás muestra y hábito de registro.',
+    nextDiscipline10ReasonCompliance: 'Tu cuello de botella es disciplina de ejecución.',
+    nextRiskFixed20Name: '20 Trades Riesgo Fijo',
+    nextRiskFixed20Reason: 'Hay fuga de riesgo o costo por errores.',
+    nextNoRevenge7Name: '7 Días Sin Revenge',
+    nextNoRevenge7Reason: 'Se detectaron emociones de alto riesgo.',
+    nextAPlusOnlyName: 'Solo Setups A+',
+    nextAPlusOnlyReason: 'Ya toca subir calidad, no cantidad.',
+  },
+  en: {
+    loadingTerminal: '// STARTING TERMINAL...',
+    connectingBinance: '// CONNECTING TO BINANCE PUBLIC API...',
+    currentCapital: 'CURRENT CAPITAL',
+    goal: 'GOAL',
+    completed: 'completed',
+    dashboard: 'DASH',
+    markets: 'MARKETS',
+    chart: 'CHART',
+    analyst: 'ANALYST',
+    challenges: 'CHALLENGES',
+    newTrade: 'NEW',
+    journal: 'JOURNAL',
+    stats: 'STATS',
+    settings: 'CONFIG',
+    activeChallenge: 'ACTIVE CHALLENGE',
+    progress: 'PROGRESS',
+    dailyDd: 'DAILY DD',
+    totalDd: 'TOTAL DD',
+    used: 'used',
+    achievements: 'ACHIEVEMENTS',
+    noTradesTitle: '// SYSTEM ONLINE',
+    noTradesBody: 'You do not have registered trades yet.',
+    currentRiskPerTrade: 'Your current risk per trade is',
+    exploreMarkets: 'EXPLORE MARKETS',
+    guardrailViolated: '// GUARDRAIL VIOLATED',
+    exposedRisk: 'Exposed risk',
+    limit: 'limit',
+    openPositions: 'open positions',
+    max: 'max',
+    performanceTerminal: 'PERFORMANCE TERMINAL',
+    totalTrades: 'TOTAL TRADES',
+    closed: 'closed',
+    open: 'open',
+    winRate: 'WIN RATE',
+    noSample: 'no sample',
+    profitFactor: 'PROFIT FACTOR',
+    grossRatio: 'gross win / gross loss',
+    avgR: 'AVG R',
+    perClosedTrade: 'per closed trade',
+    totalPnl: 'TOTAL P&L',
+    equity: 'equity',
+    openRisk: 'OPEN RISK',
+    capitalPct: 'of capital',
+    planCompliance: 'PLAN COMPLIANCE',
+    operatingDiscipline: 'operating discipline',
+    remainingGoal: 'REMAINING GOAL',
+    pending: 'pending',
+    equityCurve: 'EQUITY CURVE',
+    equityCurveSub: 'Capital over time',
+    openPositionsPanel: 'OPEN POSITIONS',
+    lastClosedTrades: 'LAST CLOSED TRADES',
+    trainingCommandCenter: 'TRAINING COMMAND CENTER',
+    processDisciplineAction: 'Process, discipline, and next action',
+    seeChallenges: 'SEE CHALLENGES',
+    readinessScore: 'READINESS SCORE',
+    disciplineLevel: 'DISCIPLINE LEVEL',
+    mistakeTax: 'MISTAKE TAX',
+    nextBestChallenge: 'NEXT BEST CHALLENGE',
+    riskRemainingToday: 'RISK REMAINING TODAY',
+    dailyBudget: 'Daily budget',
+    planComplianceCheck: 'Plan compliance',
+    riskRoomToday: 'Risk room today',
+    openRiskWithinLimit: 'Open risk within limit',
+    activeChallengeSafe: 'Active challenge safe',
+    enoughProcessData: 'Enough process data',
+    noTrade: 'NO TRADE',
+    caution: 'CAUTION',
+    ready: 'READY',
+    confidenceRegistro: 'Logging',
+    confidenceDisciplina: 'Discipline',
+    confidenceRiesgo: 'Risk',
+    confidenceConsistencia: 'Consistency',
+    confidenceEscalamiento: 'Scaling',
+    noData: 'No sample',
+    nextDiscipline10Name: '10 Trades with Plan',
+    nextDiscipline10ReasonLowSample: 'You need sample size and a logging habit.',
+    nextDiscipline10ReasonCompliance: 'Your bottleneck is execution discipline.',
+    nextRiskFixed20Name: '20 Trades Fixed Risk',
+    nextRiskFixed20Reason: 'There is risk leakage or cost from mistakes.',
+    nextNoRevenge7Name: '7 Days No Revenge',
+    nextNoRevenge7Reason: 'High-risk emotions were detected.',
+    nextAPlusOnlyName: 'A+ Setups Only',
+    nextAPlusOnlyReason: 'Time to raise quality, not quantity.',
+  },
+};
+
 // ─── HELPERS ───────────────────────────────────────────────────────────────
 const fmt = (n, d = 2) =>
   Number(n ?? 0).toLocaleString('en-US', {
@@ -394,6 +567,8 @@ export default function TradingTerminal() {
   const [loading, setLoading]   = useState(true);
   const [tab, setTab]           = useState('dashboard');
   const [editingTrade, setEditingTrade] = useState(null);
+  const [language, setLanguage] = useState('es');
+  const t = (key) => I18N[language]?.[key] || I18N.es[key] || key;
 
   // Load persisted state
   useEffect(() => {
@@ -410,10 +585,20 @@ export default function TradingTerminal() {
             if (ch?.value) setChallenges(JSON.parse(ch.value)); } catch(e){}
       try { const ach = await localApiStorage.get('achievements');
             if (ach?.value) setAchievements(JSON.parse(ach.value)); } catch(e){}
+      try {
+        const savedLanguage = window.localStorage.getItem('language');
+        if (savedLanguage === 'en' || savedLanguage === 'es') setLanguage(savedLanguage);
+      } catch(e){}
       setLoading(false);
     };
     load();
   }, []);
+
+  const changeLanguage = (nextLanguage) => {
+    setLanguage(nextLanguage);
+    try { window.localStorage.setItem('language', nextLanguage); } catch(e){}
+    document.documentElement.lang = nextLanguage;
+  };
 
   const saveConfig = async (newConfig) => {
     setConfig(newConfig);
@@ -522,7 +707,7 @@ export default function TradingTerminal() {
     return (
       <div className="min-h-screen bg-zinc-950 flex items-center justify-center">
         <div className="text-amber-400 text-sm tracking-[0.3em] animate-pulse">
-          // INICIANDO TERMINAL...
+          {t('loadingTerminal')}
         </div>
       </div>
     );
@@ -531,16 +716,17 @@ export default function TradingTerminal() {
   return (
     <div className="min-h-screen bg-zinc-950 text-zinc-100">
       <div className="grid-bg min-h-screen">
-        <TickerBar tickers={tickerBarData} status={tickerStatus} />
+        <TickerBar tickers={tickerBarData} status={tickerStatus} t={t} />
         <Header config={config} metrics={metrics} status={tickerStatus}
-                activeChallenge={activeChallenge} challengeEval={challengeEval} />
-        <TabNav tab={tab} setTab={setTab} activeChallenge={activeChallenge} />
+                activeChallenge={activeChallenge} challengeEval={challengeEval}
+                language={language} setLanguage={changeLanguage} t={t} />
+        <TabNav tab={tab} setTab={setTab} activeChallenge={activeChallenge} t={t} />
 
         <main className="max-w-6xl mx-auto px-3 sm:px-6 pb-24 pt-5">
           {tab === 'dashboard' && (
             <Dashboard config={config} metrics={metrics} trades={trades}
                        setTab={setTab} activeChallenge={activeChallenge}
-                       challengeEval={challengeEval} achievements={achievements} />
+                       challengeEval={challengeEval} achievements={achievements} t={t} />
           )}
           {tab === 'markets' && (
             <Markets watchlist={watchlist} saveWatchlist={saveWatchlist}
@@ -613,12 +799,12 @@ export default function TradingTerminal() {
 // ═══════════════════════════════════════════════════════════════════════════
 // TICKER BAR (top scrolling prices)
 // ═══════════════════════════════════════════════════════════════════════════
-function TickerBar({ tickers, status }) {
+function TickerBar({ tickers, status, t }) {
   const items = TICKER_BAR_SYMBOLS.map(s => tickers[s]).filter(Boolean);
   if (!items.length) {
     return (
       <div className="bg-zinc-900/80 border-b border-zinc-800 px-4 py-1.5 text-[10px] tracking-wider text-zinc-500">
-        // CONECTANDO A BINANCE PUBLIC API...
+        {t('connectingBinance')}
       </div>
     );
   }
@@ -657,7 +843,7 @@ function TickerBar({ tickers, status }) {
 // ═══════════════════════════════════════════════════════════════════════════
 // HEADER
 // ═══════════════════════════════════════════════════════════════════════════
-function Header({ config, metrics, activeChallenge, challengeEval }) {
+function Header({ config, metrics, activeChallenge, challengeEval, language, setLanguage, t }) {
   const { currentCapital, totalPnl, progressPct } = metrics;
   const pct = Math.max(0, Math.min(100, progressPct));
 
@@ -677,18 +863,21 @@ function Header({ config, metrics, activeChallenge, challengeEval }) {
               </span>
             )}
           </div>
-          <span className="text-[10px] tracking-[0.2em] text-zinc-600 hidden sm:block tabular">
-            {new Date().toLocaleString('es-MX', {
-              year: 'numeric', month: '2-digit', day: '2-digit',
-              hour: '2-digit', minute: '2-digit'
-            })}
-          </span>
+          <div className="flex items-center gap-3">
+            <LanguageToggle language={language} setLanguage={setLanguage} />
+            <span className="text-[10px] tracking-[0.2em] text-zinc-600 hidden sm:block tabular">
+              {new Date().toLocaleString(language === 'en' ? 'en-US' : 'es-MX', {
+                year: 'numeric', month: '2-digit', day: '2-digit',
+                hour: '2-digit', minute: '2-digit'
+              })}
+            </span>
+          </div>
         </div>
 
         <div className="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-3">
           <div>
             <div className="text-[10px] tracking-[0.3em] text-zinc-500 mb-1">
-              CAPITAL ACTUAL
+              {t('currentCapital')}
             </div>
             <div className="flex items-baseline gap-3 flex-wrap">
               <div className="text-3xl sm:text-5xl font-bold tabular text-amber-400 tracking-tight">
@@ -701,9 +890,9 @@ function Header({ config, metrics, activeChallenge, challengeEval }) {
           </div>
           <div className="flex flex-col items-start sm:items-end gap-1">
             <div className="text-[10px] tracking-[0.3em] text-zinc-500">
-              META: {fmtUsd(config.goalCapital, 0)}
+              {t('goal')}: {fmtUsd(config.goalCapital, 0)}
             </div>
-            <div className="text-xs tabular text-zinc-300">{fmt(pct, 1)}% completado</div>
+            <div className="text-xs tabular text-zinc-300">{fmt(pct, 1)}% {t('completed')}</div>
           </div>
         </div>
 
@@ -726,20 +915,37 @@ function Header({ config, metrics, activeChallenge, challengeEval }) {
   );
 }
 
+function LanguageToggle({ language, setLanguage }) {
+  return (
+    <button onClick={() => setLanguage(language === 'es' ? 'en' : 'es')}
+      className="relative h-7 w-20 border border-zinc-800 bg-zinc-950 px-1 text-[10px] font-bold tracking-[0.16em] text-zinc-500">
+      <span className={`absolute top-1 h-5 w-9 bg-amber-500 transition-all ${
+        language === 'en' ? 'left-10' : 'left-1'
+      }`} />
+      <span className={`relative z-10 inline-flex h-full w-1/2 items-center justify-center ${
+        language === 'es' ? 'text-zinc-950' : 'text-zinc-500'
+      }`}>ES</span>
+      <span className={`relative z-10 inline-flex h-full w-1/2 items-center justify-center ${
+        language === 'en' ? 'text-zinc-950' : 'text-zinc-500'
+      }`}>EN</span>
+    </button>
+  );
+}
+
 // ═══════════════════════════════════════════════════════════════════════════
 // TAB NAV
 // ═══════════════════════════════════════════════════════════════════════════
-function TabNav({ tab, setTab, activeChallenge }) {
+function TabNav({ tab, setTab, activeChallenge, t }) {
   const tabs = [
-    { id: 'dashboard', label: 'DASH',    icon: BarChart3 },
-    { id: 'markets',   label: 'MARKETS', icon: Activity  },
-    { id: 'chart',     label: 'CHART',   icon: LineIcon  },
-    { id: 'analyst',   label: 'ANALYST', icon: Brain     },
-    { id: 'challenges',label: 'RETOS',   icon: Trophy, badge: activeChallenge ? '●' : null },
-    { id: 'new',       label: 'NUEVO',   icon: Plus      },
-    { id: 'trades',    label: 'JOURNAL', icon: FileText  },
-    { id: 'stats',     label: 'STATS',   icon: BarChart2 },
-    { id: 'settings',  label: 'CONFIG',  icon: SettingsIcon },
+    { id: 'dashboard', label: t('dashboard'),    icon: BarChart3 },
+    { id: 'markets',   label: t('markets'),      icon: Activity  },
+    { id: 'chart',     label: t('chart'),        icon: LineIcon  },
+    { id: 'analyst',   label: t('analyst'),      icon: Brain     },
+    { id: 'challenges',label: t('challenges'),   icon: Trophy, badge: activeChallenge ? '●' : null },
+    { id: 'new',       label: t('newTrade'),     icon: Plus      },
+    { id: 'trades',    label: t('journal'),      icon: FileText  },
+    { id: 'stats',     label: t('stats'),        icon: BarChart2 },
+    { id: 'settings',  label: t('settings'),     icon: SettingsIcon },
   ];
 
   return (
@@ -771,89 +977,127 @@ function TabNav({ tab, setTab, activeChallenge }) {
 // ═══════════════════════════════════════════════════════════════════════════
 // DASHBOARD
 // ═══════════════════════════════════════════════════════════════════════════
-function Dashboard({ config, metrics, trades, setTab, activeChallenge, challengeEval, achievements }) {
+function Dashboard({ config, metrics, trades, setTab, activeChallenge, challengeEval, achievements, t }) {
   const { closed, open, winRate, profitFactor, avgR, planCompliance,
           openRisk, openRiskPct, totalPnl, curve } = metrics;
   const overRisk = openRiskPct > config.maxPortfolioRiskPct;
   const tooMany = open.length > config.maxOpenPositions;
   const goalRemaining = Math.max(0, config.goalCapital - metrics.currentCapital);
   const goalRemainingPct = Math.max(0, 100 - Math.max(0, Math.min(100, metrics.progressPct)));
+  const offPlan = closed.filter(t => t.followedPlan === false);
+  const onPlan = closed.filter(t => t.followedPlan === true);
+  const mistakeTax = offPlan.reduce((s, t) => s + (t.pnl || 0), 0);
+  const onPlanAvgR = onPlan.length ? onPlan.reduce((s, t) => s + (t.rResult || 0), 0) / onPlan.length : 0;
+  const offPlanAvgR = offPlan.length ? offPlan.reduce((s, t) => s + (t.rResult || 0), 0) / offPlan.length : 0;
+  const todayOpenRisk = open.reduce((s, t) => {
+    const d = new Date(t.date);
+    const now = new Date();
+    return d.toDateString() === now.toDateString() ? s + (t.riskAmount || 0) : s;
+  }, 0);
+  const todayClosedPnl = closed.reduce((s, t) => {
+    const d = new Date(t.closedAt || t.date);
+    const now = new Date();
+    return d.toDateString() === now.toDateString() ? s + (t.pnl || 0) : s;
+  }, 0);
+  const dailyRiskBudget = metrics.currentCapital * config.dailyStopPct / 100;
+  const riskRemainingToday = Math.max(0, dailyRiskBudget + Math.min(0, todayClosedPnl) - todayOpenRisk);
+  const sampleOk = closed.length >= 20;
+  const edgeOk = avgR > 0.1 && profitFactor > 1.2;
+  const disciplineOk = planCompliance >= 80;
+  const riskOk = openRiskPct <= config.maxPortfolioRiskPct && !overRisk && !tooMany;
+  const consistencyOk = closed.length >= 10 && profitFactor >= 1 && avgR >= 0;
+  const confidenceLevel = [closed.length > 0, disciplineOk, riskOk, sampleOk && edgeOk, sampleOk && edgeOk && consistencyOk].filter(Boolean).length;
+  const readinessChecks = [
+    { label: t('planComplianceCheck'), pass: !closed.length || planCompliance >= 70 },
+    { label: t('riskRoomToday'), pass: riskRemainingToday > 0 },
+    { label: t('openRiskWithinLimit'), pass: riskOk },
+    { label: t('activeChallengeSafe'), pass: !challengeEval || (challengeEval.dailyDDUsedPct < 80 && challengeEval.totalDDUsedPct < 80) },
+    { label: t('enoughProcessData'), pass: closed.length >= 5 },
+  ];
+  const readinessScore = Math.round((readinessChecks.filter(c => c.pass).length / readinessChecks.length) * 100);
+  const nextChallenge = (() => {
+    if (closed.length < 5) return { name: t('nextDiscipline10Name'), reason: t('nextDiscipline10ReasonLowSample'), templateId: 'discipline_10' };
+    if (planCompliance < 75) return { name: t('nextDiscipline10Name'), reason: t('nextDiscipline10ReasonCompliance'), templateId: 'discipline_10' };
+    if (openRiskPct > config.maxPortfolioRiskPct * 0.7 || mistakeTax < 0) return { name: t('nextRiskFixed20Name'), reason: t('nextRiskFixed20Reason'), templateId: 'risk_fixed_20' };
+    if (closed.some(trade => ['fomo', 'revenge'].includes(trade.emotion))) return { name: t('nextNoRevenge7Name'), reason: t('nextNoRevenge7Reason'), templateId: 'revenge_control_7d' };
+    return { name: t('nextAPlusOnlyName'), reason: t('nextAPlusOnlyReason'), templateId: 'a_plus_only' };
+  })();
   const dashboardMetrics = [
     {
-      label: 'TOTAL TRADES',
+      label: t('totalTrades'),
       symbol: 'TRD',
       value: trades.length,
-      sub: `${closed.length} cerrados · ${open.length} abiertos`,
+      sub: `${closed.length} ${t('closed')} · ${open.length} ${t('open')}`,
       tone: 'cyan',
       meter: Math.min(100, trades.length * 5),
       icon: BarChart3,
       signal: trades.length ? 'ACTIVE' : 'IDLE',
     },
     {
-      label: 'WIN RATE',
+      label: t('winRate'),
       symbol: 'WIN',
       value: `${fmt(winRate, 1)}%`,
-      sub: closed.length ? `${metrics.wins.length}W / ${metrics.losses.length}L` : 'sin muestra',
+      sub: closed.length ? `${metrics.wins.length}W / ${metrics.losses.length}L` : t('noSample'),
       tone: winRate >= 50 ? 'emerald' : winRate >= 40 ? 'amber' : winRate > 0 ? 'red' : 'zinc',
       meter: Math.min(100, winRate),
       icon: Target,
       signal: winRate >= 50 ? 'EDGE' : winRate > 0 ? 'WATCH' : 'WAIT',
     },
     {
-      label: 'PROFIT FACTOR',
+      label: t('profitFactor'),
       symbol: 'PF',
       value: profitFactor === Infinity ? '∞' : fmt(profitFactor, 2),
-      sub: 'gross win / gross loss',
+      sub: t('grossRatio'),
       tone: profitFactor >= 1.5 || profitFactor === Infinity ? 'emerald' : profitFactor >= 1 ? 'amber' : 'red',
       meter: profitFactor === Infinity ? 100 : Math.min(100, profitFactor * 40),
       icon: TrendingUp,
       signal: profitFactor >= 1.5 || profitFactor === Infinity ? 'BULL' : profitFactor >= 1 ? 'FLAT' : 'BEAR',
     },
     {
-      label: 'R PROMEDIO',
+      label: t('avgR'),
       symbol: 'AVG R',
       value: `${sign(avgR)}${fmt(avgR, 2)}R`,
-      sub: 'por trade cerrado',
+      sub: t('perClosedTrade'),
       tone: avgR > 0 ? 'emerald' : avgR < 0 ? 'red' : 'zinc',
       meter: Math.min(100, Math.abs(avgR) * 60),
       icon: Activity,
       signal: avgR > 0 ? 'POS' : avgR < 0 ? 'NEG' : 'NEUTRAL',
     },
     {
-      label: 'P&L TOTAL',
+      label: t('totalPnl'),
       symbol: 'PNL',
       value: `${sign(totalPnl)}${fmtUsd(totalPnl)}`,
-      sub: `equity ${fmtUsd(metrics.currentCapital)}`,
+      sub: `${t('equity')} ${fmtUsd(metrics.currentCapital)}`,
       tone: totalPnl > 0 ? 'emerald' : totalPnl < 0 ? 'red' : 'zinc',
       meter: Math.min(100, Math.abs(metrics.progressPct)),
       icon: Wallet,
       signal: totalPnl > 0 ? 'UP' : totalPnl < 0 ? 'DOWN' : 'FLAT',
     },
     {
-      label: 'RIESGO ABIERTO',
+      label: t('openRisk'),
       symbol: 'RISK',
       value: fmtUsd(openRisk),
-      sub: `${fmt(openRiskPct, 1)}% del capital`,
+      sub: `${fmt(openRiskPct, 1)}% ${t('capitalPct')}`,
       tone: overRisk ? 'red' : openRiskPct > 4 ? 'amber' : openRiskPct > 0 ? 'cyan' : 'zinc',
       meter: Math.min(100, config.maxPortfolioRiskPct > 0 ? (openRiskPct / config.maxPortfolioRiskPct) * 100 : 0),
       icon: AlertTriangle,
       signal: overRisk ? 'LIMIT' : openRiskPct > 0 ? 'OPEN' : 'CLEAR',
     },
     {
-      label: 'CUMPL. PLAN',
+      label: t('planCompliance'),
       symbol: 'PLAN',
       value: `${fmt(planCompliance, 0)}%`,
-      sub: 'disciplina operativa',
+      sub: t('operatingDiscipline'),
       tone: planCompliance >= 90 ? 'emerald' : planCompliance >= 70 ? 'amber' : closed.length ? 'red' : 'zinc',
       meter: closed.length ? planCompliance : 0,
       icon: CheckCircle,
       signal: planCompliance >= 90 ? 'LOCKED' : planCompliance >= 70 ? 'OK' : closed.length ? 'LEAK' : 'WAIT',
     },
     {
-      label: 'META RESTANTE',
+      label: t('remainingGoal'),
       symbol: 'GOAL',
       value: fmtUsd(goalRemaining),
-      sub: `${fmt(goalRemainingPct, 1)}% pendiente`,
+      sub: `${fmt(goalRemainingPct, 1)}% ${t('pending')}`,
       tone: goalRemaining === 0 ? 'emerald' : metrics.progressPct > 50 ? 'cyan' : 'amber',
       meter: Math.max(0, Math.min(100, metrics.progressPct)),
       icon: Trophy,
@@ -870,29 +1114,29 @@ function Dashboard({ config, metrics, trades, setTab, activeChallenge, challenge
           <div className="flex items-center justify-between mb-2">
             <div className="flex items-center gap-2">
               <Trophy className="w-4 h-4 text-amber-400" />
-              <div className="text-[11px] tracking-[0.2em] text-amber-400">RETO ACTIVO</div>
+              <div className="text-[11px] tracking-[0.2em] text-amber-400">{t('activeChallenge')}</div>
               <div className="text-sm text-zinc-100">{activeChallenge.name}</div>
             </div>
             <ChevronRight className="w-4 h-4 text-zinc-500" />
           </div>
           <div className="grid grid-cols-3 gap-3 text-xs">
             <div>
-              <div className="text-zinc-500 text-[10px]">PROGRESO</div>
+              <div className="text-zinc-500 text-[10px]">{t('progress')}</div>
               <div className="tabular text-zinc-200">{fmt(challengeEval.progressPct, 1)}%</div>
             </div>
             <div>
-              <div className="text-zinc-500 text-[10px]">DAILY DD</div>
+              <div className="text-zinc-500 text-[10px]">{t('dailyDd')}</div>
               <div className={`tabular ${
                 challengeEval.dailyDDUsedPct > 80 ? 'text-red-400'
                 : challengeEval.dailyDDUsedPct > 50 ? 'text-amber-400' : 'text-zinc-200'
-              }`}>{fmt(challengeEval.dailyDDUsedPct, 0)}% usado</div>
+              }`}>{fmt(challengeEval.dailyDDUsedPct, 0)}% {t('used')}</div>
             </div>
             <div>
-              <div className="text-zinc-500 text-[10px]">TOTAL DD</div>
+              <div className="text-zinc-500 text-[10px]">{t('totalDd')}</div>
               <div className={`tabular ${
                 challengeEval.totalDDUsedPct > 80 ? 'text-red-400'
                 : challengeEval.totalDDUsedPct > 50 ? 'text-amber-400' : 'text-zinc-200'
-              }`}>{fmt(challengeEval.totalDDUsedPct, 0)}% usado</div>
+              }`}>{fmt(challengeEval.totalDDUsedPct, 0)}% {t('used')}</div>
             </div>
           </div>
         </button>
@@ -903,7 +1147,7 @@ function Dashboard({ config, metrics, trades, setTab, activeChallenge, challenge
         <div className="border border-zinc-800 bg-zinc-900/40 px-4 py-3">
           <div className="flex items-center gap-2 mb-2">
             <Medal className="w-3.5 h-3.5 text-amber-400" />
-            <div className="text-[10px] tracking-[0.2em] text-zinc-500">LOGROS · {achievements.length}/{ACHIEVEMENTS.length}</div>
+            <div className="text-[10px] tracking-[0.2em] text-zinc-500">{t('achievements')} · {achievements.length}/{ACHIEVEMENTS.length}</div>
           </div>
           <div className="flex gap-2 overflow-x-auto scrollbar-hidden">
             {achievements.slice(-6).reverse().map(a => (
@@ -920,15 +1164,15 @@ function Dashboard({ config, metrics, trades, setTab, activeChallenge, challenge
 
       {trades.length === 0 && (
         <div className="border border-zinc-800 bg-zinc-900/40 p-8 text-center">
-          <div className="text-amber-400 text-xs tracking-[0.3em] mb-3">// SISTEMA INICIADO</div>
-          <div className="text-zinc-300 mb-2">No tenés trades registrados todavía.</div>
+          <div className="text-amber-400 text-xs tracking-[0.3em] mb-3">{t('noTradesTitle')}</div>
+          <div className="text-zinc-300 mb-2">{t('noTradesBody')}</div>
           <div className="text-zinc-500 text-sm mb-6">
-            Tu riesgo por trade actual es{' '}
+            {t('currentRiskPerTrade')}{' '}
             <span className="text-amber-400">${fmt(config.initialCapital * config.riskPctPerTrade / 100, 2)}</span>.
           </div>
           <button onClick={() => setTab('markets')}
             className="inline-flex items-center gap-2 bg-amber-500 hover:bg-amber-400 text-zinc-950 px-5 py-2.5 text-xs font-bold tracking-[0.2em]">
-            <Activity className="w-4 h-4" /> EXPLORAR MARKETS
+            <Activity className="w-4 h-4" /> {t('exploreMarkets')}
           </button>
         </div>
       )}
@@ -937,20 +1181,34 @@ function Dashboard({ config, metrics, trades, setTab, activeChallenge, challenge
         <div className="border border-red-500/40 bg-red-500/5 p-4 flex items-start gap-3">
           <AlertTriangle className="w-5 h-5 text-red-400 flex-shrink-0 mt-0.5" />
           <div>
-            <div className="text-red-400 text-xs tracking-wider mb-1">// GUARDRAIL VIOLADO</div>
+            <div className="text-red-400 text-xs tracking-wider mb-1">{t('guardrailViolated')}</div>
             <ul className="text-sm text-zinc-300 space-y-1">
-              {overRisk && <li>Riesgo expuesto {fmt(openRiskPct, 1)}% &gt; límite {config.maxPortfolioRiskPct}%</li>}
-              {tooMany && <li>{open.length} posiciones abiertas — máximo {config.maxOpenPositions}</li>}
+              {overRisk && <li>{t('exposedRisk')} {fmt(openRiskPct, 1)}% &gt; {t('limit')} {config.maxPortfolioRiskPct}%</li>}
+              {tooMany && <li>{open.length} {t('openPositions')} — {t('max')} {config.maxOpenPositions}</li>}
             </ul>
           </div>
         </div>
       )}
 
+      <TrainingCommandCenter
+        readinessScore={readinessScore}
+        readinessChecks={readinessChecks}
+        confidenceLevel={confidenceLevel}
+        mistakeTax={mistakeTax}
+        onPlanAvgR={onPlanAvgR}
+        offPlanAvgR={offPlanAvgR}
+        nextChallenge={nextChallenge}
+        riskRemainingToday={riskRemainingToday}
+        dailyRiskBudget={dailyRiskBudget}
+        setTab={setTab}
+        t={t}
+      />
+
       <div className="border border-zinc-800 bg-black/40 shadow-[0_0_40px_rgba(245,158,11,0.06)]">
         <div className="flex items-center justify-between border-b border-zinc-800 px-3 sm:px-4 py-2 bg-zinc-950/80">
           <div className="flex items-center gap-2">
             <LineIcon className="w-3.5 h-3.5 text-amber-400" />
-            <div className="text-[10px] tracking-[0.24em] text-zinc-400">PERFORMANCE TERMINAL</div>
+            <div className="text-[10px] tracking-[0.24em] text-zinc-400">{t('performanceTerminal')}</div>
           </div>
           <div className="hidden sm:flex items-center gap-2 text-[10px] tabular text-zinc-500">
             <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 pulse-soft" />
@@ -965,7 +1223,7 @@ function Dashboard({ config, metrics, trades, setTab, activeChallenge, challenge
       </div>
 
       {curve.length > 1 && (
-        <Panel title="EQUITY CURVE" subtitle="Capital a lo largo del tiempo">
+        <Panel title={t('equityCurve')} subtitle={t('equityCurveSub')}>
           <div className="h-56 -mx-2">
             <ResponsiveContainer width="100%" height="100%">
               <AreaChart data={curve} margin={{ top: 10, right: 16, left: 0, bottom: 0 }}>
@@ -996,7 +1254,7 @@ function Dashboard({ config, metrics, trades, setTab, activeChallenge, challenge
       )}
 
       {open.length > 0 && (
-        <Panel title="POSICIONES ABIERTAS" subtitle={`${open.length}/${config.maxOpenPositions}`}>
+        <Panel title={t('openPositionsPanel')} subtitle={`${open.length}/${config.maxOpenPositions}`}>
           <div className="divide-y divide-zinc-800">
             {open.map(t => <OpenTradeRow key={t.id} t={t} />)}
           </div>
@@ -1004,7 +1262,7 @@ function Dashboard({ config, metrics, trades, setTab, activeChallenge, challenge
       )}
 
       {closed.length > 0 && (
-        <Panel title="ÚLTIMOS TRADES CERRADOS">
+        <Panel title={t('lastClosedTrades')}>
           <div className="divide-y divide-zinc-800">
             {[...closed].reverse().slice(0, 5).map(t => <ClosedTradeRow key={t.id} t={t} />)}
           </div>
@@ -1085,6 +1343,117 @@ function TerminalMetric({ item }) {
       <div className="relative mt-2 flex justify-between text-[8px] tracking-[0.18em] text-zinc-700">
         <span>LOW</span>
         <span>HIGH</span>
+      </div>
+    </div>
+  );
+}
+
+function TrainingCommandCenter({
+  readinessScore,
+  readinessChecks,
+  confidenceLevel,
+  mistakeTax,
+  onPlanAvgR,
+  offPlanAvgR,
+  nextChallenge,
+  riskRemainingToday,
+  dailyRiskBudget,
+  setTab,
+  t,
+}) {
+  const readinessTone = readinessScore >= 80 ? 'emerald' : readinessScore >= 55 ? 'amber' : 'red';
+  const confidenceLabels = [
+    t('confidenceRegistro'),
+    t('confidenceDisciplina'),
+    t('confidenceRiesgo'),
+    t('confidenceConsistencia'),
+    t('confidenceEscalamiento'),
+  ];
+  const taxTone = mistakeTax < 0 ? 'red' : mistakeTax > 0 ? 'emerald' : 'zinc';
+  const toneClass = {
+    emerald: 'text-emerald-400 border-emerald-500/30 bg-emerald-500/5',
+    amber: 'text-amber-400 border-amber-500/30 bg-amber-500/5',
+    red: 'text-red-400 border-red-500/30 bg-red-500/5',
+    zinc: 'text-zinc-300 border-zinc-800 bg-zinc-950/50',
+    cyan: 'text-cyan-400 border-cyan-500/30 bg-cyan-500/5',
+  };
+
+  return (
+    <div className="border border-cyan-500/25 bg-black/50 shadow-[0_0_44px_rgba(34,211,238,0.05)]">
+      <div className="flex items-center justify-between gap-3 border-b border-zinc-800 px-4 py-3">
+        <div className="flex items-center gap-2">
+          <Brain className="w-4 h-4 text-cyan-400" />
+          <div>
+            <div className="text-[11px] tracking-[0.22em] text-cyan-400">{t('trainingCommandCenter')}</div>
+            <div className="text-[10px] text-zinc-500 mt-0.5">{t('processDisciplineAction')}</div>
+          </div>
+        </div>
+        <button onClick={() => setTab('challenges')}
+          className="px-3 py-1.5 text-[10px] tracking-[0.18em] border border-zinc-800 hover:border-cyan-500/50 hover:text-cyan-400 text-zinc-400">
+          {t('seeChallenges')}
+        </button>
+      </div>
+
+      <div className="grid grid-cols-1 lg:grid-cols-5 divide-y lg:divide-y-0 lg:divide-x divide-zinc-800">
+        <div className="p-4">
+          <div className="text-[10px] tracking-[0.2em] text-zinc-500 mb-2">{t('readinessScore')}</div>
+          <div className={`text-4xl tabular font-black ${toneClass[readinessTone].split(' ')[0]}`}>
+            {readinessScore}<span className="text-lg text-zinc-600">/100</span>
+          </div>
+          <div className={`mt-3 inline-flex px-2 py-1 text-[10px] tracking-[0.18em] border ${toneClass[readinessTone]}`}>
+            {readinessScore >= 80 ? t('ready') : readinessScore >= 55 ? t('caution') : t('noTrade')}
+          </div>
+        </div>
+
+        <div className="p-4">
+          <div className="text-[10px] tracking-[0.2em] text-zinc-500 mb-2">{t('disciplineLevel')}</div>
+          <div className="flex items-end gap-2">
+            <div className="text-4xl tabular font-black text-amber-400">{confidenceLevel}</div>
+            <div className="pb-1 text-sm text-zinc-600">/5</div>
+          </div>
+          <div className="mt-2 text-xs text-zinc-300">{confidenceLabels[Math.max(0, confidenceLevel - 1)] || t('noData')}</div>
+          <div className="mt-3 flex gap-1">
+            {[1,2,3,4,5].map(n => (
+              <div key={n} className={`h-1.5 flex-1 ${n <= confidenceLevel ? 'bg-amber-400' : 'bg-zinc-800'}`} />
+            ))}
+          </div>
+        </div>
+
+        <div className="p-4">
+          <div className="text-[10px] tracking-[0.2em] text-zinc-500 mb-2">{t('mistakeTax')}</div>
+          <div className={`text-2xl tabular font-black ${toneClass[taxTone].split(' ')[0]}`}>
+            {sign(mistakeTax)}{fmtUsd(mistakeTax)}
+          </div>
+          <div className="mt-2 text-[10px] text-zinc-500 leading-relaxed">
+            Off-plan avg {sign(offPlanAvgR)}{fmt(offPlanAvgR, 2)}R · on-plan {sign(onPlanAvgR)}{fmt(onPlanAvgR, 2)}R
+          </div>
+        </div>
+
+        <div className="p-4">
+          <div className="text-[10px] tracking-[0.2em] text-zinc-500 mb-2">{t('nextBestChallenge')}</div>
+          <div className="text-sm text-cyan-400 font-semibold">{nextChallenge.name}</div>
+          <div className="mt-2 text-[10px] text-zinc-500 leading-relaxed">{nextChallenge.reason}</div>
+        </div>
+
+        <div className="p-4">
+          <div className="text-[10px] tracking-[0.2em] text-zinc-500 mb-2">{t('riskRemainingToday')}</div>
+          <div className={`text-2xl tabular font-black ${riskRemainingToday > 0 ? 'text-emerald-400' : 'text-red-400'}`}>
+            {fmtUsd(riskRemainingToday)}
+          </div>
+          <div className="mt-2 text-[10px] text-zinc-500">{t('dailyBudget')} {fmtUsd(dailyRiskBudget)}</div>
+        </div>
+      </div>
+
+      <div className="grid grid-cols-1 sm:grid-cols-5 gap-2 border-t border-zinc-800 p-3">
+        {readinessChecks.map(check => (
+          <div key={check.label}
+            className={`flex items-center gap-2 border px-2 py-1.5 text-[10px] ${
+              check.pass ? 'border-emerald-500/25 text-emerald-400 bg-emerald-500/5' : 'border-zinc-800 text-zinc-500'
+            }`}>
+            {check.pass ? <CheckCircle className="w-3 h-3" /> : <XCircle className="w-3 h-3" />}
+            <span>{check.label}</span>
+          </div>
+        ))}
       </div>
     </div>
   );
