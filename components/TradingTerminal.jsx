@@ -803,28 +803,32 @@ function TickerBar({ tickers, status, t }) {
   const items = TICKER_BAR_SYMBOLS.map(s => tickers[s]).filter(Boolean);
   if (!items.length) {
     return (
-      <div className="bg-zinc-900/80 border-b border-zinc-800 px-4 py-1.5 text-[10px] tracking-wider text-zinc-500">
-        {t('connectingBinance')}
+      <div className="bg-zinc-900/80 border-b border-zinc-800">
+        <div className="max-w-6xl mx-auto px-3 sm:px-6 py-1.5 text-[10px] tracking-wider text-zinc-500">
+          {t('connectingBinance')}
+        </div>
       </div>
     );
   }
 
   return (
     <div className="bg-zinc-900/80 border-b border-zinc-800 overflow-hidden">
-      <div className="flex items-center px-4 py-1.5 gap-6 text-[11px] tabular">
-        {items.map(t => {
-          const change = parseFloat(t.priceChangePercent);
-          return (
-            <div key={t.symbol} className="flex items-center gap-2 whitespace-nowrap">
-              <span className="text-zinc-500">{t.symbol.replace('USDT', '')}</span>
-              <span className="text-zinc-200">${fmtPrice(t.lastPrice)}</span>
-              <span className={change >= 0 ? 'text-emerald-400' : 'text-red-400'}>
-                {sign(change)}{fmt(change, 2)}%
-              </span>
-            </div>
-          );
-        })}
-        <div className="ml-auto flex items-center gap-1.5 text-[10px] text-zinc-500">
+      <div className="max-w-6xl mx-auto px-3 sm:px-6 py-1.5 flex items-center gap-3 text-[11px] tabular">
+        <div className="flex min-w-0 flex-1 items-center gap-4 sm:gap-6 overflow-x-auto scrollbar-hidden">
+          {items.map(ticker => {
+            const change = parseFloat(ticker.priceChangePercent);
+            return (
+              <div key={ticker.symbol} className="flex items-center gap-2 whitespace-nowrap">
+                <span className="text-zinc-500">{ticker.symbol.replace('USDT', '')}</span>
+                <span className="text-zinc-200">${fmtPrice(ticker.lastPrice)}</span>
+                <span className={change >= 0 ? 'text-emerald-400' : 'text-red-400'}>
+                  {sign(change)}{fmt(change, 2)}%
+                </span>
+              </div>
+            );
+          })}
+        </div>
+        <div className="flex flex-shrink-0 items-center gap-1.5 text-[10px] text-zinc-500">
           {status === 'live' && (
             <><Wifi className="w-3 h-3 text-emerald-400" /> <span className="text-emerald-400">LIVE</span></>
           )}
