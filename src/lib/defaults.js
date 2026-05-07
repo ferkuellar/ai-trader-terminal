@@ -7,6 +7,8 @@ export const DEFAULT_CONFIG = {
   maxOpenPositions: 3,
   maxPortfolioRiskPct: 6,
   dailyStopPct: 3,
+  maxStopDistancePct: 12,
+  minRewardRisk: 1.5,
   startDate: null,
 };
 

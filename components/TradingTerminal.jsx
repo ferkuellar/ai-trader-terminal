@@ -5,6 +5,8 @@ import Papa from "papaparse";
 import { localApiStorage } from "@/lib/storage-client";
 import AnalystView from "@/components/analyst/AnalystView";
 import ExecutiveCryptoDashboard from "@/components/dashboard/ExecutiveCryptoDashboard";
+import RiskValidationPanel from "@/components/risk/RiskValidationPanel";
+import { validateTradeRisk } from "@/lib/risk-engine";
 import {
   TrendingUp, TrendingDown, Plus, AlertTriangle, Check, X, Trash2,
   Settings as SettingsIcon, BarChart3, FileText, Wallet, Target,
@@ -29,6 +31,8 @@ const DEFAULT_CONFIG = {
   maxOpenPositions: 3,
   maxPortfolioRiskPct: 6,
   dailyStopPct: 3,
+  maxStopDistancePct: 12,
+  minRewardRisk: 1.5,
   startDate: new Date().toISOString(),
 };
 
@@ -2248,6 +2252,7 @@ function NewTrade({ config, metrics, trades, saveTrades, onDone, defaultPair, pr
   useEffect(() => {
     if (prefill) {
       setStep('form');
+      setChecks(Array(CHECKLIST.length).fill(true));
     }
   }, [prefill?.id]);
 
@@ -2338,12 +2343,56 @@ function NewTrade({ config, metrics, trades, saveTrades, onDone, defaultPair, pr
     return canOpenTradeInChallenge(activeChallenge, challengeEval, calc.riskAmount);
   }, [activeChallenge, challengeEval, calc]);
 
+  const riskValidation = useMemo(() => {
+    const ep = parseFloat(entryPrice);
+    const sl = parseFloat(stopLoss);
+    if (!ep || !sl || ep <= 0 || sl <= 0) return null;
+
+    return validateTradeRisk({
+      trade: {
+        symbol: pair,
+        direction,
+        entry: ep,
+        stopLoss: sl,
+        tp1: parseFloat(tp1) || null,
+        tp2: parseFloat(tp2) || null,
+        positionSize: null,
+        plannedRiskAmount: null,
+        checklist: {
+          trendAligned: checks[0] === true,
+          triggerConfirmed: checks[1] === true,
+          validStop: checks[2] === true,
+          rrMin: checks[3] === true,
+          portfolioRiskOk: checks[4] === true,
+          documentedBeforeEntry: checks[5] === true,
+          emotionalStateOk: checks[6] === true,
+        },
+        emotion,
+      },
+      config: {
+        ...config,
+        maxStopDistancePct: config.maxStopDistancePct || 12,
+        minRewardRisk: config.minRewardRisk || 1.5,
+      },
+      trades,
+      activeChallenge,
+      currentCapital: metrics.currentCapital,
+    });
+  }, [entryPrice, stopLoss, tp1, tp2, pair, direction, checks, emotion, config, trades, activeChallenge, metrics.currentCapital]);
+
+  const riskBlocked = riskValidation?.status === 'BLOCKED';
+  const riskWarning = riskValidation?.status === 'WARNING';
+  const canSaveTrade = canSubmit && !riskBlocked;
+
   const handleSubmit = () => {
-    if (!canSubmit) return;
+    if (!canSaveTrade) return;
     if (challengeBlock && !challengeBlock.ok) {
       if (!confirm(`⚠ Este trade violaría una regla del reto activo:\n\n${challengeBlock.reason}\n\n¿Abrir igual? (Esto puede fallar el reto)`)) {
         return;
       }
+    }
+    if (riskWarning && !confirm(`Risk Engine marcó WARNING:\n\n${riskValidation.warnings.join('\n')}\n\n¿Guardar este trade educativo de todos modos?`)) {
+      return;
     }
     const newTrade = {
       id: makeId(),
@@ -2354,10 +2403,12 @@ function NewTrade({ config, metrics, trades, saveTrades, onDone, defaultPair, pr
       stopLoss: parseFloat(stopLoss),
       tp1: parseFloat(tp1) || null,
       tp2: parseFloat(tp2) || null,
-      positionSize: calc.positionSize,
-      riskAmount: calc.riskAmount,
-      stopPct: calc.stopPct,
-      rrExpected: calc.rr1 || null,
+      positionSize: riskValidation?.metrics?.notionalValue || calc.positionSize,
+      riskAmount: riskValidation?.metrics?.actualRiskAmount || calc.riskAmount,
+      stopPct: riskValidation?.metrics?.stopDistancePct || calc.stopPct,
+      rrExpected: riskValidation?.metrics?.rrTp1 || calc.rr1 || null,
+      riskValidationStatus: riskValidation?.status || null,
+      riskValidationScore: riskValidation?.score ?? null,
       emotion, notes,
       status: 'open',
       challengeId: activeChallenge?.id || null,
@@ -2641,6 +2692,8 @@ function NewTrade({ config, metrics, trades, saveTrades, onDone, defaultPair, pr
             </div>
           )}
 
+          <RiskValidationPanel validation={riskValidation} />
+
           <Field label="ESTADO MENTAL">
             <div className="grid grid-cols-2 sm:grid-cols-5 gap-2">
               {EMOTIONS.map(e => (
@@ -2667,9 +2720,19 @@ function NewTrade({ config, metrics, trades, saveTrades, onDone, defaultPair, pr
                 {metrics.open.length >= config.maxOpenPositions && '• Máx posiciones abiertas alcanzado '}
               </div>
             )}
-            <button onClick={handleSubmit} disabled={!canSubmit}
+            {riskBlocked && (
+              <div className="mb-3 border border-red-500/30 bg-red-950/30 p-3 text-xs text-red-300">
+                Risk Engine bloqueó este trade. Revisa blockers antes de guardar.
+              </div>
+            )}
+            {riskWarning && !riskBlocked && (
+              <div className="mb-3 border border-amber-500/30 bg-amber-950/20 p-3 text-xs text-amber-300">
+                Risk Engine marcó warnings. Puedes guardar, pero confirma conscientemente el riesgo.
+              </div>
+            )}
+            <button onClick={handleSubmit} disabled={!canSaveTrade}
               className={`w-full py-3 text-xs font-bold tracking-[0.2em] transition-colors ${
-                canSubmit ? 'bg-amber-500 hover:bg-amber-400 text-zinc-950'
+                canSaveTrade ? 'bg-amber-500 hover:bg-amber-400 text-zinc-950'
                           : 'bg-zinc-800 text-zinc-600 cursor-not-allowed'
               }`}>ABRIR POSICIÓN</button>
           </div>
