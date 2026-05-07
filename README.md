@@ -45,6 +45,14 @@ Risk Engine is local and deterministic:
 - It does not call Binance private APIs.
 - It does not execute trades.
 
+Portfolio Risk Dashboard is local and deterministic:
+
+- `/api/risk/portfolio` does not require API keys.
+- It does not require Anthropic.
+- It does not require Binance private APIs.
+- It does not execute trades.
+- It uses locally registered trades and configuration.
+
 Future phases must document any required API key before implementation.
 Never commit `.env.local`.
 Keep all private keys server-side.
@@ -135,6 +143,35 @@ Example body:
 }
 ```
 
+### POST /api/risk/portfolio
+
+Builds a deterministic portfolio exposure and capital preservation dashboard.
+
+This endpoint is local and does not require external API keys.
+
+Example body:
+
+```json
+{
+  "trades": [],
+  "config": {
+    "initialCapital": 1000,
+    "riskPctPerTrade": 1.5,
+    "maxOpenPositions": 3,
+    "maxPortfolioRiskPct": 6,
+    "dailyStopPct": 3
+  },
+  "currentCapital": 1000,
+  "activeChallenge": null,
+  "date": "2026-05-07"
+}
+```
+
+### Portfolio Risk Dashboard
+
+The dashboard is computed locally in the frontend using `src/lib/portfolio-risk-dashboard.js`.
+It does not require an API key and does not call external services.
+
 ## Code Quality and Audit Checklist
 
 - No private API keys in client-side code.
@@ -144,6 +181,11 @@ Example body:
 - Risk Engine is deterministic and local.
 - Risk validation handles invalid input safely.
 - Blocked trades are clearly explained.
+- Portfolio Risk Dashboard is deterministic and local.
+- Risk calculations handle missing stop loss and missing position size.
+- Capital preservation alerts are visible.
+- Data quality warnings are visible.
+- UI handles empty portfolio state.
 - AI responses validated server-side.
 - UI handles loading and error states.
 - Watchlist input validates minimum and maximum assets.
@@ -152,3 +194,4 @@ Example body:
 - npm run lint executed.
 - npm run build executed.
 - `docs/audits/auditoria-fase5.md` created.
+- `docs/audits/auditoria-fase6.md` created.

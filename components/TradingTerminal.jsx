@@ -5,7 +5,9 @@ import Papa from "papaparse";
 import { localApiStorage } from "@/lib/storage-client";
 import AnalystView from "@/components/analyst/AnalystView";
 import ExecutiveCryptoDashboard from "@/components/dashboard/ExecutiveCryptoDashboard";
+import PortfolioRiskDashboard from "@/components/risk/PortfolioRiskDashboard";
 import RiskValidationPanel from "@/components/risk/RiskValidationPanel";
+import { buildPortfolioRiskDashboard } from "@/lib/portfolio-risk-dashboard";
 import { validateTradeRisk } from "@/lib/risk-engine";
 import {
   TrendingUp, TrendingDown, Plus, AlertTriangle, Check, X, Trash2,
@@ -1027,6 +1029,19 @@ function Dashboard({ config, metrics, trades, setTab, activeChallenge, challenge
     { label: t('enoughProcessData'), pass: closed.length >= 5 },
   ];
   const readinessScore = Math.round((readinessChecks.filter(c => c.pass).length / readinessChecks.length) * 100);
+  const portfolioRiskDashboard = useMemo(() => {
+    try {
+      return buildPortfolioRiskDashboard({
+        trades,
+        config,
+        currentCapital: metrics.currentCapital,
+        activeChallenge,
+        date: new Date().toISOString().slice(0, 10),
+      });
+    } catch {
+      return null;
+    }
+  }, [trades, config, metrics.currentCapital, activeChallenge]);
   const nextChallenge = (() => {
     if (closed.length < 5) return { name: t('nextDiscipline10Name'), reason: t('nextDiscipline10ReasonLowSample'), templateId: 'discipline_10' };
     if (planCompliance < 75) return { name: t('nextDiscipline10Name'), reason: t('nextDiscipline10ReasonCompliance'), templateId: 'discipline_10' };
@@ -1221,6 +1236,8 @@ function Dashboard({ config, metrics, trades, setTab, activeChallenge, challenge
         watchlist={watchlist}
         setTab={setTab}
       />
+
+      <PortfolioRiskDashboard dashboard={portfolioRiskDashboard} />
 
       <div className="border border-zinc-800 bg-black/40 shadow-[0_0_40px_rgba(245,158,11,0.06)]">
         <div className="flex items-center justify-between border-b border-zinc-800 px-3 sm:px-4 py-2 bg-zinc-950/80">
