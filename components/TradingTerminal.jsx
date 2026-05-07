@@ -414,6 +414,38 @@ const sign = (n) => (n > 0 ? '+' : '');
 
 const symbolToPair = (s) => s.replace('USDT', '/USDT');
 const pairToSymbol = (p) => p.replace('/', '');
+const normalizeUiToken = (value) =>
+  String(value || '')
+    .trim()
+    .replace(/^\//, '')
+    .replace(/\/USDT$/i, '')
+    .replace(/USDT$/i, '')
+    .toUpperCase();
+const normalizeCompareToken = normalizeUiToken;
+
+const parseWatchlistInput = (value) =>
+  String(value || '')
+    .split(/[,\n ]+/)
+    .map(normalizeUiToken)
+    .filter(Boolean)
+    .filter((token, index, arr) => arr.indexOf(token) === index);
+
+const riskClass = (risk) => {
+  if (risk === 'Low') return 'text-emerald-400';
+  if (risk === 'Medium') return 'text-amber-400';
+  if (risk === 'High') return 'text-red-400';
+  return 'text-zinc-400';
+};
+
+const watchlistSignalClass = (signal) => {
+  if (signal === 'BUY') return 'text-emerald-400';
+  if (signal === 'ACCUMULATE') return 'text-cyan-400';
+  if (signal === 'HOLD') return 'text-zinc-300';
+  if (signal === 'WATCH') return 'text-amber-400';
+  if (signal === 'AVOID') return 'text-red-400';
+  return 'text-zinc-400';
+};
+
 const makeId = () =>
   typeof crypto !== 'undefined' && crypto.randomUUID
     ? crypto.randomUUID()
@@ -2678,6 +2710,23 @@ function AnalystView({ selectedSymbol, setSelectedSymbol, watchlist, config,
   const [error, setError] = useState(null);
   const [activeAnalysis, setActiveAnalysis] = useState(null);
   const [showHistory, setShowHistory] = useState(false);
+  const [compareTokenA, setCompareTokenA] = useState('BTC');
+  const [compareTokenB, setCompareTokenB] = useState('ETH');
+  const [compareLoading, setCompareLoading] = useState(false);
+  const [compareError, setCompareError] = useState('');
+  const [compareResult, setCompareResult] = useState(null);
+  const [compareSaveEnabled, setCompareSaveEnabled] = useState(true);
+  const [compareSavedMessage, setCompareSavedMessage] = useState('');
+  const [watchlistInput, setWatchlistInput] = useState(
+    Array.isArray(watchlist)
+      ? watchlist.map(normalizeUiToken).filter(Boolean).join(', ')
+      : 'BTC, ETH, SOL, ADA'
+  );
+  const [watchlistScoringLoading, setWatchlistScoringLoading] = useState(false);
+  const [watchlistScoringError, setWatchlistScoringError] = useState('');
+  const [watchlistScoringResult, setWatchlistScoringResult] = useState(null);
+  const [watchlistSaveEnabled, setWatchlistSaveEnabled] = useState(true);
+  const [watchlistSavedMessage, setWatchlistSavedMessage] = useState('');
 
   // Live price + klines for context
   const { tickers } = useLiveTickers([selectedSymbol], 10000);
@@ -2767,6 +2816,156 @@ function AnalystView({ selectedSymbol, setSelectedSymbol, watchlist, config,
     }
   };
 
+  const runCryptoCompare = async () => {
+    const tokenA = normalizeCompareToken(compareTokenA);
+    const tokenB = normalizeCompareToken(compareTokenB);
+
+    if (!tokenA || !tokenB) {
+      setCompareError('Debes capturar ambos tokens.');
+      return;
+    }
+
+    if (tokenA === tokenB) {
+      setCompareError('Los tokens deben ser diferentes.');
+      return;
+    }
+
+    setCompareTokenA(tokenA);
+    setCompareTokenB(tokenB);
+    setCompareLoading(true);
+    setCompareError('');
+    setCompareSavedMessage('');
+
+    try {
+      const response = await fetch('/api/ai/compare', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          tokenA,
+          tokenB,
+          context: {
+            source: 'analyst-tab',
+            mode: 'crypto-compare',
+            educationalOnly: true,
+          },
+        }),
+      });
+
+      const data = await response.json().catch(() => null);
+
+      if (!response.ok) {
+        throw new Error(data?.error || 'No se pudo generar la comparación.');
+      }
+
+      if (!data?.comparison) {
+        throw new Error('La API no devolvió una comparación válida.');
+      }
+
+      setCompareResult(data.comparison);
+      setActiveAnalysis(null);
+
+      if (compareSaveEnabled) {
+        const savedAnalysis = {
+          id: makeId(),
+          type: 'crypto_compare',
+          title: `${tokenA} vs ${tokenB}`,
+          tokenA,
+          tokenB,
+          createdAt: new Date().toISOString(),
+          result: data.comparison,
+        };
+        const updated = [savedAnalysis, ...analyses].slice(0, 50);
+        await saveAnalyses(updated);
+        setCompareSavedMessage('Comparación guardada en analyses.');
+      }
+    } catch (e) {
+      setCompareError(e.message || 'Error desconocido.');
+    } finally {
+      setCompareLoading(false);
+    }
+  };
+
+  const runWatchlistScoring = async () => {
+    const rawTokens = String(watchlistInput || '')
+      .split(/[,\n ]+/)
+      .map(normalizeUiToken)
+      .filter(Boolean);
+    const tokens = parseWatchlistInput(watchlistInput);
+
+    if (tokens.length < 2) {
+      setWatchlistScoringError('Agrega al menos 2 tokens para rankear la watchlist.');
+      return;
+    }
+
+    if (rawTokens.length !== tokens.length) {
+      setWatchlistScoringError('Elimina tokens duplicados antes de rankear la watchlist.');
+      return;
+    }
+
+    if (tokens.length > 25) {
+      setWatchlistScoringError('Máximo 25 tokens por corrida para mantener el análisis estable.');
+      return;
+    }
+
+    setWatchlistInput(tokens.join(', '));
+    setWatchlistScoringLoading(true);
+    setWatchlistScoringError('');
+    setWatchlistSavedMessage('');
+
+    try {
+      const response = await fetch('/api/ai/watchlist', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          tokens,
+          context: {
+            source: 'watchlist-scoring-ui',
+            mode: 'crypto-watchlist',
+            educationalOnly: true,
+          },
+        }),
+      });
+
+      const data = await response.json().catch(() => null);
+
+      if (!response.ok) {
+        throw new Error(data?.error || 'No se pudo generar el scoring de la watchlist.');
+      }
+
+      if (!data?.watchlist?.assets?.length) {
+        throw new Error('La API no devolvió activos rankeados.');
+      }
+
+      const sortedWatchlist = {
+        ...data.watchlist,
+        assets: [...data.watchlist.assets].sort(
+          (a, b) => Number(b.compositeScore || 0) - Number(a.compositeScore || 0)
+        ),
+      };
+
+      setWatchlistScoringResult(sortedWatchlist);
+      setActiveAnalysis(null);
+
+      if (watchlistSaveEnabled) {
+        const savedSnapshot = {
+          id: makeId(),
+          type: 'crypto_watchlist_snapshot',
+          title: `Watchlist Score — ${tokens.length} assets`,
+          tokens,
+          createdAt: new Date().toISOString(),
+          result: sortedWatchlist,
+        };
+        const updated = [savedSnapshot, ...analyses].slice(0, 50);
+        await saveAnalyses(updated);
+        setWatchlistSavedMessage('Snapshot guardado en analyses.');
+      }
+    } catch (e) {
+      setWatchlistScoringError(e.message || 'Error desconocido.');
+    } finally {
+      setWatchlistScoringLoading(false);
+    }
+  };
+
   const applyToTrade = (analysis) => {
     if (!analysis.setup?.valid) return;
     setTradePrefill({
@@ -2787,6 +2986,31 @@ function AnalystView({ selectedSymbol, setSelectedSymbol, watchlist, config,
     if (!confirm('¿Eliminar este análisis?')) return;
     saveAnalyses(analyses.filter(a => a.id !== id));
     if (activeAnalysis?.id === id) setActiveAnalysis(null);
+  };
+
+  const openHistoryItem = (analysis) => {
+    if (analysis.type === 'crypto_compare') {
+      setActiveAnalysis(null);
+      setCompareResult(analysis.result);
+      setWatchlistScoringResult(null);
+      setCompareTokenA(analysis.tokenA || analysis.result?.tokenA || 'BTC');
+      setCompareTokenB(analysis.tokenB || analysis.result?.tokenB || 'ETH');
+      setCompareError('');
+      setCompareSavedMessage('');
+      return;
+    }
+    if (analysis.type === 'crypto_watchlist_snapshot') {
+      setActiveAnalysis(null);
+      setCompareResult(null);
+      setWatchlistScoringResult(analysis.result);
+      setWatchlistInput(Array.isArray(analysis.tokens) ? analysis.tokens.join(', ') : watchlistInput);
+      setWatchlistScoringError('');
+      setWatchlistSavedMessage('');
+      return;
+    }
+    setWatchlistScoringResult(null);
+    setCompareResult(null);
+    setActiveAnalysis(analysis);
   };
 
   // Show history of analyses for current symbol on top
@@ -2856,6 +3080,32 @@ function AnalystView({ selectedSymbol, setSelectedSymbol, watchlist, config,
         </div>
       </div>
 
+      <CryptoComparePanel
+        tokenA={compareTokenA}
+        tokenB={compareTokenB}
+        setTokenA={setCompareTokenA}
+        setTokenB={setCompareTokenB}
+        loading={compareLoading}
+        error={compareError}
+        result={compareResult}
+        saveEnabled={compareSaveEnabled}
+        setSaveEnabled={setCompareSaveEnabled}
+        savedMessage={compareSavedMessage}
+        onCompare={runCryptoCompare}
+      />
+
+      <WatchlistScoringPanel
+        input={watchlistInput}
+        setInput={setWatchlistInput}
+        loading={watchlistScoringLoading}
+        error={watchlistScoringError}
+        result={watchlistScoringResult}
+        saveEnabled={watchlistSaveEnabled}
+        setSaveEnabled={setWatchlistSaveEnabled}
+        savedMessage={watchlistSavedMessage}
+        onScore={runWatchlistScoring}
+      />
+
       {/* Error */}
       {error && (
         <div className="border border-red-500/40 bg-red-500/5 p-4 flex items-start gap-3">
@@ -2879,7 +3129,7 @@ function AnalystView({ selectedSymbol, setSelectedSymbol, watchlist, config,
       )}
 
       {/* Empty state */}
-      {!activeAnalysis && !analyzing && !error && (
+      {!activeAnalysis && !compareResult && !watchlistScoringResult && !analyzing && !error && (
         <div className="border border-zinc-800 bg-zinc-900/40 p-8 text-center">
           <FileSearch className="w-8 h-8 text-zinc-600 mx-auto mb-3" />
           <div className="text-zinc-300 text-sm mb-1">Sin análisis activo</div>
@@ -2905,19 +3155,33 @@ function AnalystView({ selectedSymbol, setSelectedSymbol, watchlist, config,
             <div className="divide-y divide-zinc-800">
               {analyses.map(a => (
                 <button key={a.id}
-                  onClick={() => setActiveAnalysis(a)}
+                  onClick={() => openHistoryItem(a)}
                   className="w-full text-left px-4 py-3 hover:bg-zinc-900/60 flex items-center justify-between gap-3">
                   <div className="flex items-center gap-3 min-w-0">
                     <span className={`text-[10px] tracking-wider px-1.5 py-0.5 border whitespace-nowrap ${
-                      a.verdict === 'TRADE' ? 'border-emerald-500/40 text-emerald-400'
+                      a.type === 'crypto_watchlist_snapshot' ? 'border-violet-500/40 text-violet-300'
+                      : a.type === 'crypto_compare' ? 'border-cyan-500/40 text-cyan-400'
+                      : a.verdict === 'TRADE' ? 'border-emerald-500/40 text-emerald-400'
                       : a.verdict === 'WAIT' ? 'border-amber-500/40 text-amber-400'
                       : 'border-zinc-700 text-zinc-500'
-                    }`}>{a.verdict}</span>
+                    }`}>
+                      {a.type === 'crypto_watchlist_snapshot' ? 'WATCHLIST'
+                        : a.type === 'crypto_compare' ? 'COMPARE' : a.verdict}
+                    </span>
                     <div className="min-w-0">
-                      <div className="text-sm tabular truncate">{symbolToPair(a.symbol)}</div>
+                      <div className="text-sm tabular truncate">
+                        {a.type === 'crypto_watchlist_snapshot' ? (a.title || 'Watchlist Score')
+                          : a.type === 'crypto_compare' ? (a.title || `${a.tokenA} vs ${a.tokenB}`)
+                          : symbolToPair(a.symbol)}
+                      </div>
                       <div className="text-[10px] text-zinc-500 truncate">
-                        {new Date(a.timestamp).toLocaleString('es-MX', { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' })}
-                        {' · '}{a.bias} ({a.biasStrength}/10)
+                        {new Date(a.timestamp || a.createdAt).toLocaleString('es-MX', { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' })}
+                        {' · '}
+                        {a.type === 'crypto_watchlist_snapshot'
+                          ? `${a.result?.assets?.length || 0} assets`
+                          : a.type === 'crypto_compare'
+                          ? `${a.result?.composite?.winner || 'Tie'} winner`
+                          : `${a.bias} (${a.biasStrength}/10)`}
                       </div>
                     </div>
                   </div>
@@ -2926,6 +3190,555 @@ function AnalystView({ selectedSymbol, setSelectedSymbol, watchlist, config,
               ))}
             </div>
           )}
+        </div>
+      )}
+    </div>
+  );
+}
+
+function CryptoComparePanel({
+  tokenA,
+  tokenB,
+  setTokenA,
+  setTokenB,
+  loading,
+  error,
+  result,
+  saveEnabled,
+  setSaveEnabled,
+  savedMessage,
+  onCompare,
+}) {
+  const disabled = loading;
+
+  return (
+    <div className="border border-zinc-800 bg-zinc-900/40">
+      <div className="px-4 py-3 border-b border-zinc-800">
+        <div className="flex items-center gap-2">
+          <Brain className="w-4 h-4 text-cyan-400" />
+          <div className="text-[11px] tracking-[0.2em] text-zinc-300">CRYPTO COMPARE</div>
+          <BarChart2 className="w-3 h-3 text-cyan-400/60 ml-auto" />
+        </div>
+        <div className="text-[10px] text-zinc-500 mt-1">
+          // comparación educativa head-to-head usando Composite Crypto Score
+        </div>
+      </div>
+
+      <div className="p-4 space-y-4">
+        <div className="grid grid-cols-1 md:grid-cols-[1fr_1fr_auto] gap-3 items-end">
+          <Field label="TOKEN A">
+            <input
+              value={tokenA}
+              onChange={e => setTokenA(e.target.value)}
+              disabled={disabled}
+              placeholder="BTC"
+              className="w-full bg-zinc-950 border border-zinc-800 px-3 py-2.5 text-sm tabular uppercase focus:outline-none focus:border-cyan-500/50 disabled:text-zinc-600"
+            />
+          </Field>
+          <Field label="TOKEN B">
+            <input
+              value={tokenB}
+              onChange={e => setTokenB(e.target.value)}
+              disabled={disabled}
+              placeholder="ETH"
+              className="w-full bg-zinc-950 border border-zinc-800 px-3 py-2.5 text-sm tabular uppercase focus:outline-none focus:border-cyan-500/50 disabled:text-zinc-600"
+            />
+          </Field>
+          <button
+            onClick={onCompare}
+            disabled={disabled}
+            className={`px-5 py-2.5 text-xs font-bold tracking-[0.2em] inline-flex items-center justify-center gap-2 transition-colors ${
+              disabled
+                ? 'bg-zinc-800 text-zinc-500 cursor-not-allowed'
+                : 'bg-cyan-500 hover:bg-cyan-400 text-zinc-950'
+            }`}
+          >
+            {loading ? (
+              <><Loader2 className="w-4 h-4 animate-spin" /> COMPARE</>
+            ) : (
+              <><BarChart2 className="w-4 h-4" /> COMPARE</>
+            )}
+          </button>
+        </div>
+
+        <label className="inline-flex items-center gap-2 text-xs text-zinc-400">
+          <input
+            type="checkbox"
+            checked={saveEnabled}
+            onChange={e => setSaveEnabled(e.target.checked)}
+            className="h-4 w-4 accent-cyan-400"
+          />
+          Guardar en analyses
+        </label>
+
+        {loading && (
+          <div className="flex items-center gap-2 border border-cyan-500/30 bg-cyan-500/5 px-3 py-2 text-sm text-cyan-300">
+            <Loader2 className="w-4 h-4 animate-spin" />
+            Analizando comparación...
+          </div>
+        )}
+
+        {error && (
+          <div className="border border-red-500/30 bg-red-950/30 p-3 text-sm text-red-300">
+            {error}
+          </div>
+        )}
+
+        {savedMessage && (
+          <div className="border border-emerald-500/30 bg-emerald-500/5 p-3 text-sm text-emerald-300">
+            {savedMessage}
+          </div>
+        )}
+
+        {result && <CryptoCompareResult result={result} />}
+      </div>
+    </div>
+  );
+}
+
+function CryptoCompareResult({ result }) {
+  const tokenA = result?.tokenA || 'TOKEN A';
+  const tokenB = result?.tokenB || 'TOKEN B';
+  const verdict = result?.executiveVerdict || {};
+  const composite = result?.composite || {};
+  const scores = result?.scores || {};
+  const riskMatrix = result?.riskMatrix || {};
+  const biggestRisks = result?.biggestRisks || {};
+  const dataQuality = result?.dataQuality || {};
+  const scoreRows = [
+    ['On-Chain Health', scores.onChainHealth],
+    ['Tokenomics Quality', scores.tokenomicsQuality],
+    ['Sentiment & Momentum', scores.sentimentMomentum],
+    ['Technical Setup', scores.technicalSetup],
+    ['Fundamental Strength', scores.fundamentalStrength],
+  ];
+  const riskRows = [
+    ['Volatility', riskMatrix.volatilityRisk],
+    ['Liquidity', riskMatrix.liquidityRisk],
+    ['Dilution / Unlock', riskMatrix.dilutionUnlockRisk],
+    ['Regulatory', riskMatrix.regulatoryRisk],
+    ['Smart Contract', riskMatrix.smartContractRisk],
+    ['Narrative', riskMatrix.narrativeRisk],
+    ['Centralization', riskMatrix.centralizationRisk],
+    ['Drawdown', riskMatrix.drawdownRisk],
+  ];
+
+  return (
+    <div className="space-y-4 pt-1">
+      <section className="border border-cyan-500/30 bg-cyan-500/5 p-4">
+        <div className="flex items-start justify-between gap-3 flex-wrap mb-3">
+          <div>
+            <h4 className="text-[11px] tracking-[0.2em] text-cyan-300">EXECUTIVE VERDICT</h4>
+            <div className="text-[10px] text-zinc-500 mt-0.5">Resultado educativo, no asesoría financiera.</div>
+          </div>
+          <div className="text-right">
+            <div className="text-[10px] tracking-wider text-zinc-500">WINNER</div>
+            <div className="text-lg tabular text-cyan-300 font-semibold">{verdict.winner || composite.winner || 'Tie'}</div>
+          </div>
+        </div>
+
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-2 text-xs mb-3">
+          <CompareMetric label="Confidence" value={verdict.confidence} accent="cyan" />
+          <CompareMetric label="Long-Term" value={verdict.betterLongTermThesis} />
+          <CompareMetric label="Short-Term" value={verdict.betterShortTermSetup} />
+          <CompareMetric label="Risk-Adjusted" value={verdict.betterRiskAdjustedProfile} />
+          <CompareMetric label={`${tokenA} Signal`} value={verdict.signalA} accent={signalAccent(verdict.signalA)} />
+          <CompareMetric label={`${tokenB} Signal`} value={verdict.signalB} accent={signalAccent(verdict.signalB)} />
+          <CompareMetric label={`${tokenA} Grade`} value={composite.gradeA} />
+          <CompareMetric label={`${tokenB} Grade`} value={composite.gradeB} />
+        </div>
+
+        {verdict.summary && (
+          <div className="border-t border-cyan-500/20 pt-3 text-sm text-zinc-200 leading-relaxed">
+            {verdict.summary}
+          </div>
+        )}
+      </section>
+
+      <section className="border border-zinc-800 bg-zinc-950/40">
+        <div className="px-4 py-3 border-b border-zinc-800">
+          <h4 className="text-[11px] tracking-[0.2em] text-zinc-300">COMPOSITE SCORE</h4>
+        </div>
+        <div className="overflow-x-auto">
+          <table className="w-full min-w-[620px] text-xs">
+            <thead className="text-zinc-500 border-b border-zinc-800">
+              <tr>
+                <th className="text-left px-4 py-2 font-medium">Dimension</th>
+                <th className="text-right px-4 py-2 font-medium">{tokenA}</th>
+                <th className="text-right px-4 py-2 font-medium">{tokenB}</th>
+                <th className="text-left px-4 py-2 font-medium">Winner</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-zinc-800">
+              {scoreRows.map(([label, row]) => (
+                <tr key={label}>
+                  <td className="px-4 py-2 text-zinc-300">{label}</td>
+                  <td className="px-4 py-2 text-right tabular text-zinc-100">{scoreValue(row?.tokenA)}</td>
+                  <td className="px-4 py-2 text-right tabular text-zinc-100">{scoreValue(row?.tokenB)}</td>
+                  <td className="px-4 py-2 tabular text-cyan-300">{row?.winner || '-'}</td>
+                </tr>
+              ))}
+              <tr className="bg-zinc-900/40">
+                <td className="px-4 py-2 text-zinc-100 font-semibold">Composite</td>
+                <td className="px-4 py-2 text-right tabular text-zinc-100 font-semibold">{scoreValue(composite.tokenA)}</td>
+                <td className="px-4 py-2 text-right tabular text-zinc-100 font-semibold">{scoreValue(composite.tokenB)}</td>
+                <td className="px-4 py-2 tabular text-cyan-300 font-semibold">{composite.winner || '-'}</td>
+              </tr>
+              <tr>
+                <td className="px-4 py-2 text-zinc-100 font-semibold">Grade</td>
+                <td className="px-4 py-2 text-right tabular text-zinc-100 font-semibold">{composite.gradeA || '-'}</td>
+                <td className="px-4 py-2 text-right tabular text-zinc-100 font-semibold">{composite.gradeB || '-'}</td>
+                <td className="px-4 py-2 tabular text-cyan-300">{composite.winner || '-'}</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+        <div className="grid gap-2 p-4 border-t border-zinc-800">
+          {scoreRows.map(([label, row]) => row?.reason && (
+            <div key={label} className="border border-zinc-800 bg-zinc-950/60 p-3">
+              <div className="text-[10px] tracking-wider text-zinc-500 mb-1">{label.toUpperCase()}</div>
+              <div className="text-xs text-zinc-300 leading-relaxed">{row.reason}</div>
+            </div>
+          ))}
+        </div>
+      </section>
+
+      <section className="border border-zinc-800 bg-zinc-950/40">
+        <div className="px-4 py-3 border-b border-zinc-800">
+          <h4 className="text-[11px] tracking-[0.2em] text-zinc-300">RISK MATRIX</h4>
+        </div>
+        <div className="overflow-x-auto">
+          <table className="w-full min-w-[620px] text-xs">
+            <thead className="text-zinc-500 border-b border-zinc-800">
+              <tr>
+                <th className="text-left px-4 py-2 font-medium">Risk Factor</th>
+                <th className="text-left px-4 py-2 font-medium">{tokenA}</th>
+                <th className="text-left px-4 py-2 font-medium">{tokenB}</th>
+                <th className="text-left px-4 py-2 font-medium">Higher Risk</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-zinc-800">
+              {riskRows.map(([label, row]) => (
+                <tr key={label}>
+                  <td className="px-4 py-2 text-zinc-300">{label}</td>
+                  <td className={`px-4 py-2 tabular ${riskClass(row?.tokenA)}`}>{row?.tokenA || '-'}</td>
+                  <td className={`px-4 py-2 tabular ${riskClass(row?.tokenB)}`}>{row?.tokenB || '-'}</td>
+                  <td className="px-4 py-2 tabular text-zinc-200">{row?.higherRisk || '-'}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+        <div className="grid sm:grid-cols-2 gap-3 p-4 border-t border-zinc-800">
+          <RiskNote label={`Biggest Risk ${tokenA}`} value={biggestRisks[tokenA]} />
+          <RiskNote label={`Biggest Risk ${tokenB}`} value={biggestRisks[tokenB]} />
+        </div>
+      </section>
+
+      <section className="border border-zinc-800 bg-zinc-950/40 p-4">
+        <h4 className="text-[11px] tracking-[0.2em] text-zinc-300 mb-3">DATA QUALITY</h4>
+        <div className="grid sm:grid-cols-3 gap-3 text-xs mb-3">
+          <CompareMetric label="Freshness" value={dataQuality.freshness} accent={dataQuality.freshness === 'High' ? 'emerald' : dataQuality.freshness === 'Medium' ? 'amber' : 'red'} />
+          <CompareMetric label="Missing Data" value={Array.isArray(dataQuality.missingData) ? dataQuality.missingData.length : 0} />
+          <CompareMetric label="Disclaimer" value="Visible" accent="cyan" />
+        </div>
+        {Array.isArray(dataQuality.missingData) && dataQuality.missingData.length > 0 && (
+          <div className="mb-3">
+            <div className="text-[10px] tracking-wider text-zinc-500 mb-1">MISSING DATA</div>
+            <div className="flex flex-wrap gap-1.5">
+              {dataQuality.missingData.map((item, i) => (
+                <span key={`${item}-${i}`} className="border border-amber-500/30 bg-amber-500/5 px-2 py-1 text-[10px] text-amber-300">
+                  {item}
+                </span>
+              ))}
+            </div>
+          </div>
+        )}
+        {dataQuality.uncertaintyNote && (
+          <div className="text-xs text-zinc-300 leading-relaxed mb-3">{dataQuality.uncertaintyNote}</div>
+        )}
+        <div className="border border-amber-500/30 bg-amber-500/5 p-3 text-xs text-amber-200 leading-relaxed">
+          {result.disclaimer || 'Educational analysis only. This is not financial advice.'}
+        </div>
+      </section>
+    </div>
+  );
+}
+
+function CompareMetric({ label, value, accent = 'zinc' }) {
+  const accentClass = {
+    emerald: 'text-emerald-400',
+    amber: 'text-amber-400',
+    red: 'text-red-400',
+    cyan: 'text-cyan-300',
+    zinc: 'text-zinc-100',
+  }[accent] || 'text-zinc-100';
+
+  return (
+    <div className="border border-zinc-800 bg-zinc-950/60 px-3 py-2 min-w-0">
+      <div className="text-[9px] tracking-wider text-zinc-500 truncate">{label.toUpperCase()}</div>
+      <div className={`text-sm tabular font-semibold truncate ${accentClass}`}>{value ?? '-'}</div>
+    </div>
+  );
+}
+
+function RiskNote({ label, value }) {
+  return (
+    <div className="border border-zinc-800 bg-zinc-950/60 p-3">
+      <div className="text-[10px] tracking-wider text-zinc-500 mb-1">{label.toUpperCase()}</div>
+      <div className="text-xs text-zinc-300 leading-relaxed">{value || 'No disponible.'}</div>
+    </div>
+  );
+}
+
+function signalAccent(signal) {
+  if (signal === 'BUY' || signal === 'ACCUMULATE') return 'emerald';
+  if (signal === 'WATCH' || signal === 'HOLD') return 'amber';
+  if (signal === 'AVOID') return 'red';
+  return 'zinc';
+}
+
+function scoreValue(value) {
+  return typeof value === 'number' ? fmt(value, 0) : '-';
+}
+
+function WatchlistScoringPanel({
+  input,
+  setInput,
+  loading,
+  error,
+  result,
+  saveEnabled,
+  setSaveEnabled,
+  savedMessage,
+  onScore,
+}) {
+  return (
+    <div className="border border-zinc-800 bg-zinc-900/40">
+      <div className="px-4 py-3 border-b border-zinc-800">
+        <div className="flex items-center gap-2">
+          <BarChart3 className="w-4 h-4 text-cyan-400" />
+          <div className="text-[11px] tracking-[0.2em] text-zinc-300">WATCHLIST SCORING</div>
+          <Activity className="w-3 h-3 text-cyan-400/60 ml-auto" />
+        </div>
+        <div className="text-[10px] text-zinc-500 mt-1">
+          // rankea activos por Composite Crypto Score y señal educativa
+        </div>
+      </div>
+
+      <div className="p-4 space-y-4">
+        <Field label="TOKENS">
+          <textarea
+            value={input}
+            onChange={e => setInput(e.target.value)}
+            disabled={loading}
+            rows={3}
+            placeholder="BTC, ETH, SOL, ADA, LINK"
+            className="w-full resize-y bg-zinc-950 border border-zinc-800 px-3 py-2.5 text-sm tabular uppercase focus:outline-none focus:border-cyan-500/50 disabled:text-zinc-600"
+          />
+        </Field>
+
+        <div className="flex flex-col sm:flex-row sm:items-center gap-3 justify-between">
+          <label className="inline-flex items-center gap-2 text-xs text-zinc-400">
+            <input
+              type="checkbox"
+              checked={saveEnabled}
+              onChange={e => setSaveEnabled(e.target.checked)}
+              className="h-4 w-4 accent-cyan-400"
+            />
+            Guardar snapshot en analyses
+          </label>
+          <button
+            onClick={onScore}
+            disabled={loading}
+            className={`px-5 py-2.5 text-xs font-bold tracking-[0.2em] inline-flex items-center justify-center gap-2 transition-colors ${
+              loading
+                ? 'bg-zinc-800 text-zinc-500 cursor-not-allowed'
+                : 'bg-cyan-500 hover:bg-cyan-400 text-zinc-950'
+            }`}
+          >
+            {loading ? (
+              <><Loader2 className="w-4 h-4 animate-spin" /> SCORING...</>
+            ) : (
+              <><BarChart3 className="w-4 h-4" /> SCORE WATCHLIST</>
+            )}
+          </button>
+        </div>
+
+        {loading && (
+          <div className="flex items-center gap-2 border border-cyan-500/30 bg-cyan-500/5 px-3 py-2 text-sm text-cyan-300">
+            <Loader2 className="w-4 h-4 animate-spin" />
+            Rankeando watchlist...
+          </div>
+        )}
+
+        {error && (
+          <div className="border border-red-500/30 bg-red-950/30 p-3 text-sm text-red-300">
+            {error}
+          </div>
+        )}
+
+        {savedMessage && (
+          <div className="border border-emerald-500/30 bg-emerald-500/5 p-3 text-sm text-emerald-300">
+            {savedMessage}
+          </div>
+        )}
+
+        {result && <WatchlistScoringResult result={result} />}
+      </div>
+    </div>
+  );
+}
+
+function WatchlistScoringResult({ result }) {
+  const assets = Array.isArray(result?.assets)
+    ? [...result.assets].sort((a, b) => Number(b.compositeScore || 0) - Number(a.compositeScore || 0))
+    : [];
+  const summary = result?.summary || {};
+  const dataQuality = result?.dataQuality || {};
+
+  return (
+    <div className="space-y-4 pt-1">
+      <section className="border border-cyan-500/30 bg-cyan-500/5 p-4">
+        <div className="flex items-center justify-between gap-3 flex-wrap mb-3">
+          <div>
+            <h4 className="text-[11px] tracking-[0.2em] text-cyan-300">EXECUTIVE DASHBOARD</h4>
+            <div className="text-[10px] text-zinc-500 mt-0.5">
+              Snapshot generado {result?.generatedAt ? new Date(result.generatedAt).toLocaleString('es-MX') : 'ahora'}
+            </div>
+          </div>
+          <div className="text-[10px] text-zinc-500 tabular">{assets.length} assets</div>
+        </div>
+        <div className="grid grid-cols-2 lg:grid-cols-5 gap-2 text-xs">
+          <CompareMetric label="Best Overall" value={summary.bestOverall || 'N/A'} accent="cyan" />
+          <CompareMetric label="Best Momentum" value={summary.bestMomentum || 'N/A'} accent="emerald" />
+          <CompareMetric label="Lowest Risk" value={summary.lowestRisk || 'N/A'} accent="emerald" />
+          <CompareMetric label="Highest Risk" value={summary.highestRisk || 'N/A'} accent="red" />
+          <CompareMetric label="Freshness" value={dataQuality.freshness || 'N/A'} accent={dataQuality.freshness === 'High' ? 'emerald' : dataQuality.freshness === 'Medium' ? 'amber' : 'red'} />
+        </div>
+        {summary.marketRegimeNote && (
+          <div className="mt-3 border-t border-cyan-500/20 pt-3 text-sm text-zinc-200 leading-relaxed">
+            {summary.marketRegimeNote}
+          </div>
+        )}
+      </section>
+
+      <section className="border border-zinc-800 bg-zinc-950/40">
+        <div className="px-4 py-3 border-b border-zinc-800">
+          <h4 className="text-[11px] tracking-[0.2em] text-zinc-300">RANKING TABLE</h4>
+        </div>
+        <div className="overflow-x-auto">
+          <table className="w-full min-w-[920px] text-xs">
+            <thead className="text-zinc-500 border-b border-zinc-800">
+              <tr>
+                <th className="text-right px-4 py-2 font-medium">Rank</th>
+                <th className="text-left px-4 py-2 font-medium">Asset</th>
+                <th className="text-right px-4 py-2 font-medium">Score</th>
+                <th className="text-left px-4 py-2 font-medium">Grade</th>
+                <th className="text-left px-4 py-2 font-medium">Signal</th>
+                <th className="text-left px-4 py-2 font-medium">Risk</th>
+                <th className="text-left px-4 py-2 font-medium">Confidence</th>
+                <th className="text-left px-4 py-2 font-medium">Key Strength</th>
+                <th className="text-left px-4 py-2 font-medium">Key Weakness</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-zinc-800">
+              {assets.map((asset, index) => (
+                <tr key={asset.symbol || index}>
+                  <td className="px-4 py-2 text-right tabular text-zinc-400">{asset.rank || index + 1}</td>
+                  <td className="px-4 py-2 tabular text-zinc-100 font-semibold">{asset.symbol || '-'}</td>
+                  <td className="px-4 py-2 text-right tabular text-zinc-100 font-semibold">{scoreValue(asset.compositeScore)}</td>
+                  <td className="px-4 py-2 tabular text-cyan-300">{asset.grade || '-'}</td>
+                  <td className={`px-4 py-2 tabular font-semibold ${watchlistSignalClass(asset.signal)}`}>{asset.signal || '-'}</td>
+                  <td className={`px-4 py-2 tabular ${riskClass(asset.riskLevel)}`}>{asset.riskLevel || '-'}</td>
+                  <td className="px-4 py-2 tabular text-zinc-200">{asset.confidence || '-'}</td>
+                  <td className="px-4 py-2 text-zinc-300 max-w-[220px]">{asset.keyStrength || '-'}</td>
+                  <td className="px-4 py-2 text-zinc-400 max-w-[220px]">{asset.keyWeakness || '-'}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      </section>
+
+      <section className="border border-zinc-800 bg-zinc-950/40">
+        <div className="px-4 py-3 border-b border-zinc-800">
+          <h4 className="text-[11px] tracking-[0.2em] text-zinc-300">SCORE BREAKDOWN</h4>
+        </div>
+        <div className="grid md:grid-cols-2 gap-3 p-4">
+          {assets.map((asset, index) => (
+            <WatchlistAssetScoreCard key={asset.symbol || index} asset={asset} />
+          ))}
+        </div>
+      </section>
+
+      <section className="border border-zinc-800 bg-zinc-950/40 p-4">
+        <h4 className="text-[11px] tracking-[0.2em] text-zinc-300 mb-3">DATA QUALITY</h4>
+        <div className="grid sm:grid-cols-3 gap-3 text-xs mb-3">
+          <CompareMetric label="Freshness" value={dataQuality.freshness || 'N/A'} accent={dataQuality.freshness === 'High' ? 'emerald' : dataQuality.freshness === 'Medium' ? 'amber' : 'red'} />
+          <CompareMetric label="Missing Data" value={Array.isArray(dataQuality.missingData) ? dataQuality.missingData.length : 0} />
+          <CompareMetric label="Disclaimer" value="Visible" accent="cyan" />
+        </div>
+        {Array.isArray(dataQuality.missingData) && dataQuality.missingData.length > 0 && (
+          <div className="mb-3">
+            <div className="text-[10px] tracking-wider text-zinc-500 mb-1">MISSING DATA</div>
+            <div className="flex flex-wrap gap-1.5">
+              {dataQuality.missingData.map((item, i) => (
+                <span key={`${item}-${i}`} className="border border-amber-500/30 bg-amber-500/5 px-2 py-1 text-[10px] text-amber-300">
+                  {item}
+                </span>
+              ))}
+            </div>
+          </div>
+        )}
+        {dataQuality.uncertaintyNote && (
+          <div className="text-xs text-zinc-300 leading-relaxed mb-3">{dataQuality.uncertaintyNote}</div>
+        )}
+        <div className="border border-amber-500/30 bg-amber-500/5 p-3 text-xs text-amber-200 leading-relaxed">
+          {result.disclaimer || 'Educational analysis only. This is not financial advice.'}
+        </div>
+      </section>
+    </div>
+  );
+}
+
+function WatchlistAssetScoreCard({ asset }) {
+  const rows = [
+    ['On-Chain', asset?.scores?.onChainHealth],
+    ['Tokenomics', asset?.scores?.tokenomicsQuality],
+    ['Sentiment', asset?.scores?.sentimentMomentum],
+    ['Technical', asset?.scores?.technicalSetup],
+    ['Fundamental', asset?.scores?.fundamentalStrength],
+  ];
+
+  return (
+    <div className="border border-zinc-800 bg-zinc-950/60 p-3">
+      <div className="flex items-start justify-between gap-3 mb-3">
+        <div>
+          <div className="text-sm tabular text-zinc-100 font-semibold">{asset?.symbol || '-'}</div>
+          <div className="text-[10px] text-zinc-500 mt-0.5">{asset?.summary || 'Sin resumen disponible.'}</div>
+        </div>
+        <div className={`text-xs tabular font-semibold ${watchlistSignalClass(asset?.signal)}`}>
+          {asset?.signal || '-'}
+        </div>
+      </div>
+      <div className="space-y-2">
+        {rows.map(([label, value]) => (
+          <div key={label} className="grid grid-cols-[92px_1fr_36px] items-center gap-2">
+            <div className="text-[10px] text-zinc-500">{label}</div>
+            <div className="h-1.5 bg-zinc-900 border border-zinc-800 overflow-hidden">
+              <div
+                className={`h-full ${Number(value || 0) >= 70 ? 'bg-emerald-400' : Number(value || 0) >= 45 ? 'bg-amber-400' : 'bg-red-400'}`}
+                style={{ width: `${Math.max(0, Math.min(100, Number(value || 0)))}%` }}
+              />
+            </div>
+            <div className="text-right text-[10px] tabular text-zinc-300">{scoreValue(value)}</div>
+          </div>
+        ))}
+      </div>
+      {asset?.invalidation && (
+        <div className="mt-3 border-t border-zinc-800 pt-2 text-[10px] text-amber-300 leading-relaxed">
+          Invalidation: {asset.invalidation}
         </div>
       )}
     </div>
