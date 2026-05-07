@@ -1,14 +1,21 @@
 # Auditoria Fase 3 - Crypto Compare + Watchlist Scoring
 
-## Estado
+## 1. Auditoria inicial
 
-Completada.
+Se reviso la necesidad de ampliar el analisis AI desde setups individuales hacia comparaciones crypto y scoring de watchlist.
 
-## Objetivo
+El objetivo fue crear capacidades educativas de decision support sin ejecutar trades ni recomendar apalancamiento.
 
-Agregar comparacion crypto head-to-head y scoring educativo de watchlist usando Composite Crypto Score.
+## 2. Plan tecnico
 
-## Backend implementado
+- Crear endpoint `/api/ai/compare`.
+- Crear endpoint `/api/ai/watchlist`.
+- Crear prompts y validadores server-side.
+- Integrar Crypto Compare en el tab Analyst.
+- Integrar Watchlist Scoring en el tab Analyst.
+- Guardar resultados opcionalmente en `analyses`.
+
+## 3. Archivos creados
 
 - `app/api/ai/compare/route.js`
 - `app/api/ai/watchlist/route.js`
@@ -17,26 +24,33 @@ Agregar comparacion crypto head-to-head y scoring educativo de watchlist usando 
 - `src/lib/crypto-watchlist-prompt.js`
 - `src/lib/crypto-watchlist-validation.js`
 
-## UI implementada
+## 4. Archivos modificados
 
-- Crypto Compare dentro del tab Analyst.
-- Watchlist Scoring dentro del tab Analyst.
-- Estados de loading, error y guardado opcional en `analyses`.
-- Render de Executive Verdict, Composite Score, Risk Matrix, Data Quality y ranking de watchlist.
+- `components/TradingTerminal.jsx`
+- `README.md`
 
-## Seguridad
+## 5. Implementacion
 
-- Las llamadas a Anthropic siguen server-side.
-- No se agregaron llaves privadas de exchanges.
-- No se agrego trading real.
-- Las respuestas AI son validadas server-side.
+Se implemento Crypto Compare con Composite Crypto Score, Executive Verdict, Composite Score, Risk Matrix y Data Quality.
 
-## Riesgos detectados
+Tambien se implemento Watchlist Scoring para rankear multiples activos, mostrar senales educativas y guardar snapshots en `analyses`.
 
-- El tab Analyst quedo funcional, pero muy grande dentro de `TradingTerminal.jsx`.
-- La duplicacion de helpers visuales empezaba a crecer.
-- Era necesario separar componentes antes de construir dashboards acumulativos.
+Ambos flujos consumen endpoints internos server-side y validan payloads antes de entregar resultados al cliente.
 
-## Continuidad
+## 6. Validacion
 
-La siguiente fase tecnica necesaria fue Fase 3.5: refactor modular del tab Analyst.
+- `/api/ai/compare` valida tokens requeridos y tokens diferentes.
+- `/api/ai/watchlist` valida minimo 2 tokens y maximo 25.
+- Las llamadas validas requieren `ANTHROPIC_API_KEY`.
+- La UI maneja loading, error y resultado.
+- El guardado en `analyses` no borra registros previos.
+
+## 7. Riesgos
+
+- El tab Analyst crecio demasiado dentro de `TradingTerminal.jsx`.
+- Habia duplicacion de helpers visuales.
+- Las respuestas AI dependen de validacion manual y del cumplimiento del schema por el modelo.
+
+## 8. Auditoria final
+
+La Fase 3 dejo funcionales Crypto Compare y Watchlist Scoring. El siguiente paso necesario fue Fase 3.5: refactor modular del tab Analyst para reducir deuda tecnica antes de agregar dashboards ejecutivos.

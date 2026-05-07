@@ -1,38 +1,49 @@
 # Auditoria Fase 2 - AI Analyst individual
 
-## Estado
+## 1. Auditoria inicial
 
-Completada.
+Se reviso la integracion AI individual para analizar setups educativos desde la plataforma.
 
-## Objetivo
+Los archivos clave fueron `app/api/ai/analyze/route.js`, `src/lib/ai-prompt.js`, `src/lib/ai-validation.js` y `components/TradingTerminal.jsx`.
 
-Integrar analisis AI individual para setups educativos usando API server-side.
+## 2. Plan tecnico
 
-## Archivos relevantes
+- Mantener llamadas AI server-side.
+- Usar `ANTHROPIC_API_KEY` solo en backend.
+- Parsear y validar respuestas AI antes de enviarlas al cliente.
+- Renderizar resultado educativo dentro del tab Analyst.
+- Guardar resultados en `analyses` sin borrar datos previos.
+
+## 3. Archivos creados
 
 - `app/api/ai/analyze/route.js`
 - `src/lib/ai-prompt.js`
 - `src/lib/ai-validation.js`
+
+## 4. Archivos modificados
+
 - `components/TradingTerminal.jsx`
+- `README.md` si se documento la API o variables de entorno.
 
-## Hallazgos principales
+## 5. Implementacion
 
-- La llamada a Anthropic se realiza server-side.
-- La respuesta AI se parsea y valida antes de regresar al cliente.
-- La UI maneja estados de carga y error.
-- Los resultados pueden guardarse en `analyses`.
+Se implemento un flujo AI individual donde el cliente envia datos del setup al endpoint server-side.
 
-## Seguridad
+El backend construye el prompt, llama a Anthropic, extrae JSON, valida payload y devuelve una respuesta estructurada para renderizar en la UI.
 
-- `ANTHROPIC_API_KEY` se mantiene del lado servidor.
-- No se expone la llave en el cliente.
-- No se agrego ejecucion de operaciones ni llaves privadas de exchanges.
+## 6. Validacion
 
-## Riesgos detectados
+- El endpoint `/api/ai/analyze` queda disponible.
+- La llave `ANTHROPIC_API_KEY` no se expone al cliente.
+- La UI contempla loading y error.
+- El resultado puede persistirse en `analyses`.
 
-- El tab Analyst comenzo a crecer demasiado dentro del monolito.
-- La validacion AI dependia de schemas manuales, sin Zod ni librerias externas.
+## 7. Riesgos
 
-## Continuidad
+- Validacion manual sin librerias externas.
+- Dependencia de calidad de respuesta del LLM.
+- El tab Analyst empezo a crecer dentro del monolito.
 
-La siguiente fase fue ampliar el analisis AI hacia comparativas crypto y scoring de watchlist.
+## 8. Auditoria final
+
+La Fase 2 establecio el primer flujo AI util de la plataforma. La continuidad natural fue agregar comparacion crypto y watchlist scoring usando una metodologia de Composite Crypto Score.

@@ -1,14 +1,21 @@
 # Auditoria Fase 3.5 - Refactor modular del tab ANALYST
 
-## Estado
+## 1. Auditoria inicial
 
-Completada.
+Se reviso `components/TradingTerminal.jsx` y se confirmo que el tab Analyst contenia analisis individual, Crypto Compare, Watchlist Scoring, helpers visuales, handlers async y render de resultados dentro del monolito.
 
-## Objetivo
+El archivo superaba las 5,500 lineas antes del refactor y era el principal punto de riesgo para seguir escalando.
 
-Extraer el tab Analyst desde `components/TradingTerminal.jsx` hacia componentes y helpers separados sin cambiar comportamiento visible ni estructura de datos.
+## 2. Plan tecnico
 
-## Archivos creados
+- Extraer el tab Analyst a `components/analyst/AnalystView.jsx`.
+- Separar Crypto Compare y Watchlist Scoring.
+- Separar cards de resultados.
+- Separar badges, loading y errores.
+- Extraer helpers visuales a `src/lib`.
+- No cambiar endpoints, prompts, persistencia ni estructura de datos.
+
+## 3. Archivos creados
 
 - `components/analyst/AnalystView.jsx`
 - `components/analyst/CryptoComparePanel.jsx`
@@ -24,29 +31,32 @@ Extraer el tab Analyst desde `components/TradingTerminal.jsx` hacia componentes 
 - `src/lib/score-formatters.js`
 - `src/lib/signal-formatters.js`
 
-## Archivos modificados
+## 4. Archivos modificados
 
 - `components/TradingTerminal.jsx`
 
-## Resultado tecnico
+## 5. Implementacion
 
-- El tab Analyst ahora vive principalmente en `components/analyst/AnalystView.jsx`.
-- Crypto Compare y Watchlist Scoring quedaron separados.
-- Badges, loading, errores y cards de resultado quedaron reutilizables.
-- `TradingTerminal.jsx` quedo mas pequeno y con menor responsabilidad directa.
+`TradingTerminal.jsx` ahora importa `AnalystView` y delega ahi la mayor parte del tab Analyst.
 
-## Validacion
+Crypto Compare, Watchlist Scoring, cards de resultado, badges y estados de UI quedaron separados en `components/analyst/`.
 
-- `npm run lint` paso con warnings de hooks existentes.
+Los helpers de formato, senales y tokens se movieron a `src/lib` para reducir duplicacion.
+
+## 6. Validacion
+
+- `npm run lint` paso con warnings de hooks.
 - `npm run build` paso al ejecutarse fuera del sandbox de Windows.
+- Se verifico que no quedara texto corrupto por encoding.
 - La app respondio correctamente en dev server.
+- Los endpoints AI mantuvieron sus validaciones.
 
-## Riesgos pendientes
+## 7. Riesgos
 
-- Hay hooks duplicados entre `TradingTerminal.jsx` y `AnalystView.jsx` para conservar comportamiento.
-- Conviene consolidar hooks de mercado en una fase tecnica posterior.
 - Persisten warnings de `react-hooks/exhaustive-deps`.
+- Algunos hooks/helpers de mercado quedaron duplicados para preservar comportamiento.
+- Conviene consolidar hooks compartidos en una fase tecnica posterior.
 
-## Continuidad
+## 8. Auditoria final
 
-La nueva estructura deja listo el terreno para Fase 4: Executive Crypto Dashboard.
+La Fase 3.5 redujo deuda tecnica sin cambiar comportamiento funcional. El tab Analyst quedo modularizado y listo para que Fase 4 pudiera apoyarse en una estructura mas limpia.

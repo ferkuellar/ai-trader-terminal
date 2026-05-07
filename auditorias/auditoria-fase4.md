@@ -1,56 +1,56 @@
 # Auditoria Fase 4 - Executive Crypto Dashboard
 
-## Estado
+## 1. Auditoria inicial
 
-Completada.
+Se revisaron los snapshots disponibles en `analyses` y la necesidad de transformar analisis AI aislados en inteligencia visual acumulada.
 
-## Objetivo
+Las fuentes prioritarias fueron `crypto_compare` y `crypto_watchlist_snapshot`.
 
-Crear un dashboard ejecutivo que consolide snapshots AI y muestre inteligencia descriptiva sobre activos crypto.
+## 2. Plan tecnico
 
-## Archivos creados
+- Crear un dashboard ejecutivo sin agregar base de datos.
+- Leer snapshots desde la persistencia local existente.
+- Mostrar resumen, ranking, tendencias, distribucion de senales y alertas.
+- Usar empty states cuando no haya datos.
+- No inventar metricas ni generar recomendaciones irresponsables.
+
+## 3. Archivos creados
 
 - `components/dashboard/ExecutiveCryptoDashboard.jsx`
 
-## Archivos modificados
+## 4. Archivos modificados
 
 - `components/TradingTerminal.jsx`
 
-## Funcionalidad implementada
+## 5. Implementacion
 
-- Lectura de snapshots desde `analyses`.
-- Soporte para `crypto_compare`.
-- Soporte para `crypto_watchlist_snapshot`.
-- Cards ejecutivas de resumen.
-- Tendencia de Composite Scores.
-- Ranking historico.
-- Distribucion de senales.
-- Comparaciones recientes.
-- Alertas descriptivas por cambios relevantes.
-- Empty states cuando no hay datos suficientes.
+Se agrego `ExecutiveCryptoDashboard` al dashboard principal.
 
-## Seguridad
+El componente lee `analyses` y calcula informacion descriptiva:
 
-- No se agregaron endpoints nuevos.
-- No se tocaron llaves ni variables de entorno.
-- No se agrego trading real.
-- No se agrego manejo de fondos.
-- El dashboard solo lee informacion persistida localmente.
+- metricas ejecutivas,
+- tendencia de Composite Scores,
+- ranking historico,
+- distribucion de senales,
+- comparaciones recientes,
+- alertas por cambios relevantes,
+- estado vacio cuando no existe historial suficiente.
 
-## Validacion
+## 6. Validacion
 
 - `npm run lint` paso con warnings.
 - `npm run build` paso fuera del sandbox.
-- `GET /` respondio `200` en dev server.
-- `/api/ai/watchlist` valido correctamente errores de 1 token y mas de 25 tokens.
-- Las llamadas validas a APIs AI devolvieron `500` esperado por falta de `ANTHROPIC_API_KEY`.
+- `GET /` respondio `200`.
+- `/api/ai/watchlist` devolvio `400` con 1 token.
+- `/api/ai/watchlist` devolvio `400` con mas de 25 tokens.
+- Las llamadas AI validas devolvieron `500` esperado por falta de `ANTHROPIC_API_KEY`.
 
-## Riesgos detectados
+## 7. Riesgos
 
-- Si no hay snapshots, el dashboard depende de empty states.
-- La calidad del dashboard aumentara cuando haya historial real de `crypto_compare` y `crypto_watchlist_snapshot`.
-- Conviene normalizar snapshots en una fase futura si se requiere analitica mas avanzada.
+- El dashboard depende de que existan snapshots reales.
+- Si hay poco historial, solo puede mostrar estado inicial o datos parciales.
+- Para analitica avanzada conviene normalizar snapshots en una fase futura.
 
-## Continuidad
+## 8. Auditoria final
 
-La siguiente fase recomendada es Fase 5: Risk Engine + Trade Validation.
+La Fase 4 convirtio los resultados AI guardados en una vista ejecutiva descriptiva. No se cambio persistencia, no se agregaron endpoints y no se introdujo trading real. La siguiente fase recomendada es Fase 5: Risk Engine + Trade Validation.
