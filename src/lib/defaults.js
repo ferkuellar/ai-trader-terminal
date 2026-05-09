@@ -32,4 +32,6 @@ export const DEFAULT_STATE = {
   analyses: [],
   challenges: [],
   achievements: [],
+  positionEvents: [],
+  journal: [],
 };

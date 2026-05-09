@@ -8,8 +8,12 @@ import ExecutiveCryptoDashboard from "@/components/dashboard/ExecutiveCryptoDash
 import PortfolioRiskDashboard from "@/components/risk/PortfolioRiskDashboard";
 import RiskValidationPanel from "@/components/risk/RiskValidationPanel";
 import TradeHealthBar from "../src/components/TradeHealthBar";
+import PositionManagementModal from "../src/components/PositionManagementModal";
 import { buildPortfolioRiskDashboard } from "@/lib/portfolio-risk-dashboard";
 import { validateTradeRisk } from "@/lib/risk-engine";
+import {
+  calculateTradeHealth,
+} from "@/lib/trade-health";
 import {
   TrendingUp, TrendingDown, Plus, AlertTriangle, Check, X, Trash2,
   Settings as SettingsIcon, BarChart3, FileText, Wallet, Target,
@@ -421,6 +425,27 @@ const colorPnL = (n) =>
 
 const sign = (n) => (n > 0 ? '+' : '');
 
+const getTradeGoalProgressZone = (progressToTp1Pct) => {
+  const progress = Number(progressToTp1Pct);
+  if (!Number.isFinite(progress)) return 'gray';
+  if (progress >= 70) return 'green';
+  if (progress >= 35) return 'yellow';
+  return 'red';
+};
+
+const manageButtonGoalClass = (goalZone) => {
+  if (goalZone === 'green') {
+    return 'border-emerald-500/60 bg-emerald-500/10 text-emerald-300 shadow-[0_0_16px_rgba(16,185,129,0.14)] hover:border-emerald-400 hover:text-emerald-200 pulse-soft';
+  }
+  if (goalZone === 'yellow') {
+    return 'border-yellow-400/70 bg-yellow-400/10 text-yellow-300 shadow-[0_0_16px_rgba(250,204,21,0.14)] hover:border-yellow-300 hover:text-yellow-200 pulse-soft';
+  }
+  if (goalZone === 'red') {
+    return 'border-red-500/70 bg-red-500/10 text-red-300 shadow-[0_0_16px_rgba(239,68,68,0.18)] hover:border-red-400 hover:text-red-200 pulse-soft';
+  }
+  return 'border-zinc-800 text-zinc-400 hover:border-cyan-500/50 hover:text-cyan-300';
+};
+
 const symbolToPair = (s) => s.replace('USDT', '/USDT');
 const pairToSymbol = (p) => p.replace('/', '');
 
@@ -573,6 +598,8 @@ export default function TradingTerminal() {
   const [analyses, setAnalyses] = useState([]);
   const [challenges, setChallenges] = useState([]);
   const [achievements, setAchievements] = useState([]);
+  const [positionEvents, setPositionEvents] = useState([]);
+  const [journal, setJournal] = useState([]);
   const [tradePrefill, setTradePrefill] = useState(null);
   const [loading, setLoading]   = useState(true);
   const [tab, setTab]           = useState('dashboard');
@@ -595,6 +622,10 @@ export default function TradingTerminal() {
             if (ch?.value) setChallenges(JSON.parse(ch.value)); } catch(e){}
       try { const ach = await localApiStorage.get('achievements');
             if (ach?.value) setAchievements(JSON.parse(ach.value)); } catch(e){}
+      try { const pe = await localApiStorage.get('positionEvents');
+            if (pe?.value) setPositionEvents(JSON.parse(pe.value)); } catch(e){}
+      try { const j = await localApiStorage.get('journal');
+            if (j?.value) setJournal(JSON.parse(j.value)); } catch(e){}
       try {
         const savedLanguage = window.localStorage.getItem('language');
         if (savedLanguage === 'en' || savedLanguage === 'es') setLanguage(savedLanguage);
@@ -633,6 +664,14 @@ export default function TradingTerminal() {
   const saveAchievements = async (newList) => {
     setAchievements(newList);
     try { await localApiStorage.set('achievements', JSON.stringify(newList)); } catch(e){}
+  };
+  const savePositionEvents = async (newList) => {
+    setPositionEvents(newList);
+    try { await localApiStorage.set('positionEvents', JSON.stringify(newList)); } catch(e){}
+  };
+  const saveJournal = async (newList) => {
+    setJournal(newList);
+    try { await localApiStorage.set('journal', JSON.stringify(newList)); } catch(e){}
   };
 
   // Active challenge (single in-progress one)
@@ -735,6 +774,11 @@ export default function TradingTerminal() {
         <main className="max-w-6xl mx-auto px-3 sm:px-6 pb-24 pt-5">
           {tab === 'dashboard' && (
             <Dashboard config={config} metrics={metrics} trades={trades}
+                       saveTrades={saveTrades}
+                       positionEvents={positionEvents}
+                       savePositionEvents={savePositionEvents}
+                       journal={journal}
+                       saveJournal={saveJournal}
                        setTab={setTab} activeChallenge={activeChallenge}
                        challengeEval={challengeEval} achievements={achievements}
                        analyses={analyses} watchlist={watchlist} t={t} />
@@ -792,13 +836,24 @@ export default function TradingTerminal() {
             <Settings config={config} saveConfig={saveConfig}
                       trades={trades} saveTrades={saveTrades}
                       watchlist={watchlist} analyses={analyses}
-                      challenges={challenges} achievements={achievements} />
+                      challenges={challenges} achievements={achievements}
+                      positionEvents={positionEvents} journal={journal} />
           )}
         </main>
 
         {editingTrade && (
-          <CloseTradeModal trade={editingTrade} trades={trades}
-            saveTrades={saveTrades} onClose={() => setEditingTrade(null)} />
+          <PositionManagementModal
+            trade={editingTrade}
+            currentPrice={null}
+            open={Boolean(editingTrade)}
+            onClose={() => setEditingTrade(null)}
+            onSave={({ event, journalEntry, updatedTrade }) => {
+              saveTrades(trades.map((trade) => trade.id === updatedTrade.id ? updatedTrade : trade));
+              savePositionEvents([event, ...positionEvents]);
+              saveJournal([journalEntry, ...journal]);
+              setEditingTrade(null);
+            }}
+          />
         )}
 
         <Footer status={tickerStatus} />
@@ -992,7 +1047,24 @@ function TabNav({ tab, setTab, activeChallenge, t }) {
 // ═══════════════════════════════════════════════════════════════════════════
 // DASHBOARD
 // ═══════════════════════════════════════════════════════════════════════════
-function Dashboard({ config, metrics, trades, setTab, activeChallenge, challengeEval, achievements, analyses, watchlist, t }) {
+function Dashboard({
+  config,
+  metrics,
+  trades,
+  saveTrades,
+  positionEvents,
+  savePositionEvents,
+  journal,
+  saveJournal,
+  setTab,
+  activeChallenge,
+  challengeEval,
+  achievements,
+  analyses,
+  watchlist,
+  t,
+}) {
+  const [managedPosition, setManagedPosition] = useState(null);
   const { closed, open, winRate, profitFactor, avgR, planCompliance,
           openRisk, openRiskPct, totalPnl, curve } = metrics;
   const overRisk = openRiskPct > config.maxPortfolioRiskPct;
@@ -1292,7 +1364,13 @@ function Dashboard({ config, metrics, trades, setTab, activeChallenge, challenge
       {open.length > 0 && (
         <Panel title={t('openPositionsPanel')} subtitle={`${open.length}/${config.maxOpenPositions}`}>
           <div className="divide-y divide-zinc-800">
-            {open.map(t => <OpenTradeRow key={t.id} t={t} />)}
+            {open.map(t => (
+              <OpenTradeRow
+                key={t.id}
+                t={t}
+                onManage={(trade, currentPrice) => setManagedPosition({ trade, currentPrice })}
+              />
+            ))}
           </div>
         </Panel>
       )}
@@ -1304,6 +1382,19 @@ function Dashboard({ config, metrics, trades, setTab, activeChallenge, challenge
           </div>
         </Panel>
       )}
+
+      <PositionManagementModal
+        trade={managedPosition?.trade || null}
+        currentPrice={managedPosition?.currentPrice || null}
+        open={Boolean(managedPosition)}
+        onClose={() => setManagedPosition(null)}
+        onSave={({ event, journalEntry, updatedTrade }) => {
+          saveTrades(trades.map((trade) => trade.id === updatedTrade.id ? updatedTrade : trade));
+          savePositionEvents([event, ...positionEvents]);
+          saveJournal([journalEntry, ...journal]);
+          setManagedPosition(null);
+        }}
+      />
     </div>
   );
 }
@@ -1533,7 +1624,7 @@ function Field({ label, children }) {
   );
 }
 
-function OpenTradeRow({ t }) {
+function OpenTradeRow({ t, onManage }) {
   const symbol = pairToSymbol(t.pair);
   const { tickers } = useLiveTickers([symbol], 1000);
   const livePrice = tickers[symbol] ? parseFloat(tickers[symbol].lastPrice) : null;
@@ -1562,17 +1653,24 @@ function OpenTradeRow({ t }) {
     entry: t.entryPrice,
     currentPrice: livePrice ?? t.currentPrice ?? t.lastPrice ?? t.markPrice ?? null,
   };
+  const tradeHealth = calculateTradeHealth(healthTrade);
+  const goalProgressZone = getTradeGoalProgressZone(tradeHealth.progressToTp1Pct);
+  const manageButtonClass = manageButtonGoalClass(goalProgressZone);
+  const goalProgressLabel = tradeHealth.progressToTp1Pct === null
+    ? 'meta sin datos'
+    : `${fmt(tradeHealth.progressToTp1Pct, 0)}% hacia TP1`;
 
   return (
     <div className="px-4 py-4 hover:bg-zinc-950/40 transition-colors">
-      <div className="flex items-start justify-between gap-3 mb-3">
-        <div className="flex items-center gap-3 min-w-0">
+      <div className="flex flex-col gap-3 mb-3 sm:flex-row sm:items-start sm:justify-between">
+        <div className="flex min-w-0 items-center gap-3">
           <span className="text-[10px] tracking-wider px-1.5 py-0.5 border border-amber-500/40 text-amber-400 blink">
             OPEN
           </span>
           <div className="min-w-0">
-            <div className="flex items-center gap-2 text-sm tabular truncate">
+            <div className="flex min-w-0 flex-wrap items-center gap-2 text-sm tabular">
               <span className="text-zinc-100">{t.pair}</span>
+              <TradeHealthBar trade={healthTrade} size="compact" showTooltip />
               <span className={t.direction === 'long' ? 'text-emerald-400' : 'text-red-400'}>
                 {t.direction === 'long' ? 'LONG' : 'SHORT'}
               </span>
@@ -1583,13 +1681,23 @@ function OpenTradeRow({ t }) {
             </div>
           </div>
         </div>
-        <div className="text-right flex-shrink-0">
-          <div className={`text-base tabular font-bold ${pnlColor}`}>
-            {floatingPnl === null ? '—' : `${sign(floatingPnl)}${fmtUsd(floatingPnl)}`}
+        <div className="flex flex-shrink-0 items-start gap-2 sm:justify-end">
+          <div className="text-left sm:text-right">
+            <div className={`text-base tabular font-bold ${pnlColor}`}>
+              {floatingPnl === null ? '—' : `${sign(floatingPnl)}${fmtUsd(floatingPnl)}`}
+            </div>
+            <div className={`text-[10px] tabular ${pnlColor}`}>
+              {floatingR === null ? 'P&L flotante' : `${sign(floatingR)}${fmt(floatingR, 2)}R flotante`}
+            </div>
           </div>
-          <div className={`text-[10px] tabular ${pnlColor}`}>
-            {floatingR === null ? 'P&L flotante' : `${sign(floatingR)}${fmt(floatingR, 2)}R flotante`}
-          </div>
+          <button
+            type="button"
+            onClick={() => onManage?.(t, livePrice)}
+            title={`Gestionar posición · ${goalProgressLabel}`}
+            className={`border px-2.5 py-1.5 text-[10px] font-semibold tracking-[0.14em] transition-colors ${manageButtonClass}`}
+          >
+            Gestionar
+          </button>
         </div>
       </div>
 
@@ -1622,7 +1730,6 @@ function OpenTradeRow({ t }) {
         </div>
       </div>
 
-      <TradeHealthBar trade={healthTrade} />
     </div>
   );
 }
@@ -2879,7 +2986,7 @@ function TradeListItem({ trade: t, onClose, onDelete }) {
           {isOpen && (
             <button onClick={onClose}
               className="text-[10px] tracking-wider px-2 py-1 border border-zinc-700 hover:border-amber-500/60 hover:text-amber-400 text-zinc-400 transition-colors">
-              CERRAR
+              GESTIONAR
             </button>
           )}
           <button onClick={onDelete} className="text-zinc-600 hover:text-red-400 p-1">
@@ -3088,118 +3195,6 @@ function CsvImport({ trades, saveTrades, onClose }) {
           </button>
         </div>
       )}
-    </div>
-  );
-}
-
-// ═══════════════════════════════════════════════════════════════════════════
-// CLOSE TRADE MODAL
-// ═══════════════════════════════════════════════════════════════════════════
-function CloseTradeModal({ trade: t, trades, saveTrades, onClose }) {
-  const [exitPrice, setExitPrice] = useState('');
-  const [followedPlan, setFollowedPlan] = useState(true);
-  const [lesson, setLesson] = useState('');
-
-  // Live price
-  const symbol = pairToSymbol(t.pair);
-  const { tickers } = useLiveTickers([symbol], 5000);
-  const livePrice = tickers[symbol] ? parseFloat(tickers[symbol].lastPrice) : null;
-
-  const preview = useMemo(() => {
-    const ex = parseFloat(exitPrice);
-    if (!ex || ex <= 0) return null;
-    const units = t.positionSize / t.entryPrice;
-    const pnl = t.direction === 'long' ? (ex - t.entryPrice) * units
-                                       : (t.entryPrice - ex) * units;
-    const rResult = pnl / t.riskAmount;
-    return { pnl, rResult };
-  }, [exitPrice, t]);
-
-  const handleClose = () => {
-    if (!preview) return;
-    const updated = trades.map(x =>
-      x.id === t.id ? { ...x, status: 'closed',
-        exitPrice: parseFloat(exitPrice), pnl: preview.pnl, rResult: preview.rResult,
-        followedPlan, lesson, closedAt: new Date().toISOString() } : x
-    );
-    saveTrades(updated);
-    onClose();
-  };
-
-  return (
-    <div className="fixed inset-0 z-50 bg-black/70 backdrop-blur-sm flex items-end sm:items-center justify-center p-4 sm:p-6"
-         onClick={onClose}>
-      <div onClick={(e) => e.stopPropagation()}
-           className="w-full max-w-md bg-zinc-950 border border-zinc-800 max-h-[90vh] overflow-y-auto">
-        <div className="px-4 py-3 border-b border-zinc-800 flex items-center justify-between">
-          <div>
-            <div className="text-[11px] tracking-[0.2em] text-zinc-300">CERRAR POSICIÓN</div>
-            <div className="text-[10px] text-zinc-500 mt-0.5">
-              {t.pair} · {t.direction.toUpperCase()} · entry {fmtUsd(t.entryPrice, 4)}
-            </div>
-          </div>
-          <button onClick={onClose} className="text-zinc-500 hover:text-zinc-300">
-            <X className="w-4 h-4" />
-          </button>
-        </div>
-
-        <div className="p-4 space-y-4">
-          <Field label="PRECIO DE SALIDA">
-            <input type="number" step="any" value={exitPrice} autoFocus
-              onChange={e => setExitPrice(e.target.value)} placeholder="0.00"
-              className="w-full bg-zinc-900 border border-zinc-800 px-3 py-2 text-sm tabular focus:outline-none focus:border-amber-500/50" />
-            {livePrice && (
-              <div className="text-[10px] text-zinc-500 mt-1 tabular">
-                live: ${fmtPrice(livePrice)}{' '}
-                <button onClick={() => setExitPrice(livePrice.toString())}
-                        className="text-cyan-400 hover:text-cyan-300 ml-1">[usar]</button>
-              </div>
-            )}
-          </Field>
-
-          {preview && (
-            <div className={`border p-3 ${
-              preview.pnl > 0 ? 'border-emerald-500/40 bg-emerald-500/5' : 'border-red-500/40 bg-red-500/5'
-            }`}>
-              <div className="grid grid-cols-2 gap-3">
-                <div><div className="text-[10px] tracking-[0.2em] text-zinc-500">P&L</div>
-                     <div className={`text-xl tabular font-bold ${colorPnL(preview.pnl)}`}>
-                       {sign(preview.pnl)}{fmtUsd(preview.pnl)}</div></div>
-                <div><div className="text-[10px] tracking-[0.2em] text-zinc-500">R RESULTADO</div>
-                     <div className={`text-xl tabular font-bold ${colorPnL(preview.rResult)}`}>
-                       {sign(preview.rResult)}{fmt(preview.rResult, 2)}R</div></div>
-              </div>
-            </div>
-          )}
-
-          <Field label="¿SEGUÍ MI PLAN?">
-            <div className="grid grid-cols-2 gap-2">
-              <button onClick={() => setFollowedPlan(true)}
-                className={`py-2 text-xs tracking-wider border transition-colors ${
-                  followedPlan ? 'border-emerald-500/60 bg-emerald-500/10 text-emerald-400'
-                              : 'border-zinc-800 text-zinc-500'
-                }`}>SÍ — TAL CUAL</button>
-              <button onClick={() => setFollowedPlan(false)}
-                className={`py-2 text-xs tracking-wider border transition-colors ${
-                  !followedPlan ? 'border-amber-500/60 bg-amber-500/10 text-amber-400'
-                                : 'border-zinc-800 text-zinc-500'
-                }`}>NO — ME DESVIÉ</button>
-            </div>
-          </Field>
-
-          <Field label="LECCIÓN APRENDIDA">
-            <textarea value={lesson} onChange={e => setLesson(e.target.value)} rows={2}
-              placeholder="¿Qué aprendiste de este trade?"
-              className="w-full bg-zinc-900 border border-zinc-800 px-3 py-2 text-sm focus:outline-none focus:border-amber-500/50 resize-none" />
-          </Field>
-
-          <button onClick={handleClose} disabled={!preview}
-            className={`w-full py-3 text-xs font-bold tracking-[0.2em] transition-colors ${
-              preview ? 'bg-amber-500 hover:bg-amber-400 text-zinc-950'
-                      : 'bg-zinc-800 text-zinc-600 cursor-not-allowed'
-            }`}>CERRAR TRADE</button>
-        </div>
-      </div>
     </div>
   );
 }
@@ -4598,7 +4593,8 @@ function ChallengeHistoryRow({ challenge: c, trades, onDuplicate, onDelete }) {
 // SETTINGS
 // ═══════════════════════════════════════════════════════════════════════════
 function Settings({ config, saveConfig, trades, saveTrades,
-                    watchlist, analyses, challenges, achievements }) {
+                    watchlist, analyses, challenges, achievements,
+                    positionEvents, journal }) {
   const [local, setLocal] = useState(config);
   useEffect(() => setLocal(config), [config]);
   const update = (k, v) => setLocal(c => ({ ...c, [k]: v }));
@@ -4612,6 +4608,8 @@ function Settings({ config, saveConfig, trades, saveTrades,
       analyses,
       challenges,
       achievements,
+      positionEvents,
+      journal,
     }, null, 2);
     const blob = new Blob([data], { type: 'application/json' });
     const url = URL.createObjectURL(blob);

@@ -1,6 +1,9 @@
-import { calculateTradeHealth, getTradeHealthColorClass } from "@/lib/trade-health";
+import {
+  calculateTradeHealth,
+  getTradeHealthDisplayState,
+} from "@/lib/trade-health";
 
-const fmt = (value, decimals = 1) => {
+const fmt = (value, decimals = 0) => {
   const number = Number(value);
   if (!Number.isFinite(number)) return "N/A";
   return number.toLocaleString(undefined, {
@@ -9,65 +12,47 @@ const fmt = (value, decimals = 1) => {
   });
 };
 
-const segmentClass = (segment) => {
-  if (!segment.active) return "bg-zinc-800/70";
-  if (segment.level === "safe") return "bg-emerald-400";
-  if (segment.level === "warning") return "bg-amber-400";
-  if (segment.level === "danger") return "bg-red-500";
-  return "bg-zinc-700";
+const segmentClass = (zone, activeZone) => {
+  const off = "bg-slate-700/60";
+  if (activeZone === "gray") return "bg-slate-500/40";
+  if (zone !== activeZone) return off;
+  if (zone === "red") return "bg-red-500 shadow-[0_0_10px_rgba(239,68,68,0.35)]";
+  if (zone === "yellow") return "bg-yellow-400 shadow-[0_0_10px_rgba(250,204,21,0.30)]";
+  if (zone === "green") return "bg-emerald-500 shadow-[0_0_10px_rgba(16,185,129,0.30)]";
+  return off;
 };
 
-export default function TradeHealthBar({ trade }) {
+export default function TradeHealthBar({
+  trade,
+  size = "compact",
+  showLabel = false,
+  showTooltip = true,
+}) {
   const health = calculateTradeHealth(trade);
-  const toneClass = getTradeHealthColorClass(health);
-  const riskLabel = health.riskConsumedPct === null
-    ? "riesgo N/A"
-    : `${fmt(health.riskConsumedPct)}% riesgo consumido`;
+  const display = getTradeHealthDisplayState(health);
+  const widthClass = size === "compact" ? "w-16 sm:w-20" : "w-24";
+  const heightClass = size === "compact" ? "h-1.5" : "h-2";
+  const title = `${display.label} · ${
+    health.riskConsumedPct === null ? "riesgo N/A" : `${fmt(health.riskConsumedPct)}% riesgo consumido`
+  }. ${health.message}`;
 
   return (
-    <div className="mt-3 border border-zinc-800 bg-zinc-950/60 p-3">
-      <div className="mb-2 flex flex-col gap-1 sm:flex-row sm:items-center sm:justify-between">
-        <div className="text-[10px] font-semibold tracking-[0.18em] text-zinc-500">
-          SALUD DEL TRADE
-        </div>
-        <div className={`inline-flex w-fit border px-2 py-1 text-[10px] font-bold tracking-[0.16em] ${toneClass}`}>
-          {health.label} · {riskLabel}
-        </div>
-      </div>
-
+    <div className="flex min-w-0 items-center justify-center gap-2" title={showTooltip ? title : undefined}>
       <div
-        className="grid grid-cols-8 gap-1"
-        title={health.message}
-        aria-label={`Salud del trade: ${health.label}. ${health.message}`}
+        className={`grid ${widthClass} grid-cols-3 gap-1`}
+        aria-label={title}
       >
-        {health.segments.map((segment) => (
-          <div
-            key={segment.id}
-            className={`h-2 rounded-sm transition-colors ${segmentClass(segment)}`}
+        {["red", "yellow", "green"].map((zone) => (
+          <span
+            key={zone}
+            className={`${heightClass} rounded-full transition-colors ${segmentClass(zone, display.activeZone)}`}
           />
         ))}
       </div>
-
-      <div className="mt-2 grid gap-2 text-[11px] text-zinc-500 sm:grid-cols-3">
-        <div>
-          <span className="text-zinc-600">Stop a </span>
-          <span className={health.status === "UNKNOWN" ? "text-zinc-500" : "text-zinc-300"}>
-            {health.distanceToStopPct === null ? "N/A" : `${fmt(health.distanceToStopPct, 2)}%`}
-          </span>
-        </div>
-        <div>
-          <span className="text-zinc-600">TP1 </span>
-          <span className={health.progressToTp1Pct === null ? "text-zinc-500" : "text-cyan-300"}>
-            {health.progressToTp1Pct === null ? "N/A" : `${fmt(health.progressToTp1Pct, 1)}%`}
-          </span>
-        </div>
-        <div className="truncate" title={health.message}>{health.message}</div>
-      </div>
-
-      {health.warnings?.length > 0 && (
-        <div className="mt-2 text-[11px] text-amber-400">
-          {health.warnings.join(" · ")}
-        </div>
+      {showLabel && (
+        <span className={`hidden truncate text-[10px] font-semibold tracking-[0.12em] sm:inline ${display.colorClass.split(" ")[0]}`}>
+          {display.label}
+        </span>
       )}
     </div>
   );

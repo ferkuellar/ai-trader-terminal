@@ -7,14 +7,9 @@ export const TRADE_HEALTH_STATUS = {
 };
 
 const SEGMENTS = [
-  { level: "safe" },
-  { level: "safe" },
-  { level: "safe" },
-  { level: "warning" },
-  { level: "warning" },
-  { level: "danger" },
-  { level: "danger" },
-  { level: "danger" },
+  { level: "red", zone: "red" },
+  { level: "yellow", zone: "yellow" },
+  { level: "green", zone: "green" },
 ];
 
 const clamp = (value, min = 0, max = 100) =>
@@ -47,6 +42,7 @@ function buildUnknown(message, warnings = []) {
     distanceToStopPct: null,
     progressToTp1Pct: null,
     direction: null,
+    activeZone: "gray",
     message,
     segments: getTradeHealthSegments({ status: TRADE_HEALTH_STATUS.UNKNOWN, riskConsumedPct: null }),
     warnings,
@@ -71,26 +67,31 @@ export function getTradeHealthColorClass(health) {
   return "text-zinc-400 border-zinc-700 bg-zinc-900/60";
 }
 
-export function getTradeHealthSegments(health = {}) {
-  const status = health.status || TRADE_HEALTH_STATUS.UNKNOWN;
-  if (status === TRADE_HEALTH_STATUS.UNKNOWN) {
-    return SEGMENTS.map((segment, index) => ({
-      ...segment,
-      id: `${segment.level}-${index}`,
-      active: false,
-    }));
-  }
+export function getTradeHealthZone(health) {
+  const status = typeof health === "string" ? health : health?.status;
+  if (status === TRADE_HEALTH_STATUS.HEALTHY) return "green";
+  if (status === TRADE_HEALTH_STATUS.CAUTION) return "yellow";
+  if (status === TRADE_HEALTH_STATUS.DANGER || status === TRADE_HEALTH_STATUS.STOP_ZONE) return "red";
+  return "gray";
+}
 
-  const riskConsumedPct = clamp(health.riskConsumedPct ?? 0);
-  const activeSafe = status === TRADE_HEALTH_STATUS.HEALTHY ? 3 : 0;
-  const activeWarning = status === TRADE_HEALTH_STATUS.CAUTION ? 5 : 0;
-  const activeDanger = status === TRADE_HEALTH_STATUS.DANGER ? 7 : status === TRADE_HEALTH_STATUS.STOP_ZONE ? 8 : 0;
-  const threshold = Math.max(activeSafe, activeWarning, activeDanger);
+export function getTradeHealthDisplayState(health) {
+  const status = typeof health === "string" ? health : health?.status;
+  return {
+    status: status || TRADE_HEALTH_STATUS.UNKNOWN,
+    label: getTradeHealthLabel(health),
+    activeZone: getTradeHealthZone(health),
+    colorClass: getTradeHealthColorClass(health),
+  };
+}
+
+export function getTradeHealthSegments(health = {}) {
+  const activeZone = health.activeZone || getTradeHealthZone(health);
 
   return SEGMENTS.map((segment, index) => ({
     ...segment,
     id: `${segment.level}-${index}`,
-    active: index < threshold || riskConsumedPct === 0,
+    active: activeZone !== "gray" && segment.zone === activeZone,
   }));
 }
 
@@ -142,8 +143,8 @@ export function calculateTradeHealth(trade = {}) {
 
   let status = TRADE_HEALTH_STATUS.HEALTHY;
   if (riskConsumedPct >= 100) status = TRADE_HEALTH_STATUS.STOP_ZONE;
-  else if (riskConsumedPct > 65) status = TRADE_HEALTH_STATUS.DANGER;
-  else if (riskConsumedPct > 30) status = TRADE_HEALTH_STATUS.CAUTION;
+  else if (riskConsumedPct >= 70) status = TRADE_HEALTH_STATUS.DANGER;
+  else if (riskConsumedPct >= 35) status = TRADE_HEALTH_STATUS.CAUTION;
 
   const label = getTradeHealthLabel(status);
   const message = status === TRADE_HEALTH_STATUS.HEALTHY
@@ -158,6 +159,7 @@ export function calculateTradeHealth(trade = {}) {
     status,
     label,
     riskConsumedPct: round(riskConsumedPct, 2),
+    activeZone: getTradeHealthZone(status),
     distanceToStopAmount: round(Math.max(0, distanceToStopAmount), 8),
     distanceToStopPct: round(distanceToStopPct, 2),
     progressToTp1Pct: progressToTp1Pct === null ? null : round(progressToTp1Pct, 2),
