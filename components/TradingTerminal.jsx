@@ -7,6 +7,7 @@ import AnalystView from "@/components/analyst/AnalystView";
 import ExecutiveCryptoDashboard from "@/components/dashboard/ExecutiveCryptoDashboard";
 import PortfolioRiskDashboard from "@/components/risk/PortfolioRiskDashboard";
 import RiskValidationPanel from "@/components/risk/RiskValidationPanel";
+import TradeHealthBar from "../src/components/TradeHealthBar";
 import { buildPortfolioRiskDashboard } from "@/lib/portfolio-risk-dashboard";
 import { validateTradeRisk } from "@/lib/risk-engine";
 import {
@@ -1555,6 +1556,12 @@ function OpenTradeRow({ t }) {
   const age = ageHours < 24 ? `${fmt(ageHours, 1)}h` : `${fmt(ageHours / 24, 1)}d`;
   const pnlColor = floatingPnl > 0 ? 'text-emerald-400'
     : floatingPnl < 0 ? 'text-red-400' : 'text-zinc-300';
+  const healthTrade = {
+    ...t,
+    symbol,
+    entry: t.entryPrice,
+    currentPrice: livePrice ?? t.currentPrice ?? t.lastPrice ?? t.markPrice ?? null,
+  };
 
   return (
     <div className="px-4 py-4 hover:bg-zinc-950/40 transition-colors">
@@ -1614,6 +1621,8 @@ function OpenTradeRow({ t }) {
           <div className="tabular text-zinc-300 truncate" title={t.setup}>{t.setup || '—'}</div>
         </div>
       </div>
+
+      <TradeHealthBar trade={healthTrade} />
     </div>
   );
 }
