@@ -7,6 +7,7 @@ import AnalystView from "@/components/analyst/AnalystView";
 import ExecutiveCryptoDashboard from "@/components/dashboard/ExecutiveCryptoDashboard";
 import PortfolioRiskDashboard from "@/components/risk/PortfolioRiskDashboard";
 import RiskValidationPanel from "@/components/risk/RiskValidationPanel";
+import MarketsSection from "../src/components/markets/MarketsSection";
 import TradeHealthBar from "../src/components/TradeHealthBar";
 import PositionManagementModal from "../src/components/PositionManagementModal";
 import { buildPortfolioRiskDashboard } from "@/lib/portfolio-risk-dashboard";
@@ -1782,219 +1783,14 @@ function ClosedTradeRow({ t }) {
 // ═══════════════════════════════════════════════════════════════════════════
 // MARKETS — Live prices grid
 // ═══════════════════════════════════════════════════════════════════════════
-function Markets({ watchlist, saveWatchlist, setSelectedSymbol, setTab }) {
-  const [sortBy, setSortBy] = useState('change');
-  const [showAdd, setShowAdd] = useState(false);
-  const [pairSearch, setPairSearch] = useState('');
-  const [flashMap, setFlashMap] = useState({});
-  const prevPricesRef = useRef({});
-  const { symbols: availableSymbols, status: symbolsStatus } = useBinanceSpotSymbols();
-  const { tickers, status } = useLiveTickers(watchlist, 1000);
-
-  useEffect(() => {
-    const nextFlash = {};
-    Object.values(tickers).forEach(t => {
-      const price = parseFloat(t.lastPrice);
-      const prev = prevPricesRef.current[t.symbol];
-      if (Number.isFinite(price) && Number.isFinite(prev) && price !== prev) {
-        nextFlash[t.symbol] = price > prev ? 'up' : 'down';
-      }
-      if (Number.isFinite(price)) {
-        prevPricesRef.current[t.symbol] = price;
-      }
-    });
-
-    if (Object.keys(nextFlash).length) {
-      setFlashMap(nextFlash);
-      const id = setTimeout(() => setFlashMap({}), 850);
-      return () => clearTimeout(id);
-    }
-  }, [tickers]);
-
-  const sorted = useMemo(() => {
-    const list = watchlist.map(s => tickers[s]).filter(Boolean);
-    return list.sort((a, b) => {
-      if (sortBy === 'change') return parseFloat(b.priceChangePercent) - parseFloat(a.priceChangePercent);
-      if (sortBy === 'volume') return parseFloat(b.quoteVolume) - parseFloat(a.quoteVolume);
-      if (sortBy === 'price')  return parseFloat(b.lastPrice) - parseFloat(a.lastPrice);
-      return 0;
-    });
-  }, [watchlist, tickers, sortBy]);
-
-  const removeFromWatchlist = (symbol) => {
-    saveWatchlist(watchlist.filter(s => s !== symbol));
-  };
-
-  const addToWatchlist = (symbol) => {
-    const normalized = symbol.toUpperCase().replace('/', '').trim();
-    if (!watchlist.includes(normalized)) saveWatchlist([...watchlist, normalized]);
-    setPairSearch('');
-  };
-
-  const normalizedSearch = pairSearch.toUpperCase().replace('/', '').replace(/\s+/g, '');
-  const searchWithQuote = normalizedSearch && !normalizedSearch.endsWith('USDT')
-    ? `${normalizedSearch}USDT`
-    : normalizedSearch;
-  const filteredAvailable = useMemo(() => {
-    const q = normalizedSearch;
-    const candidates = availableSymbols.filter(p => !watchlist.includes(p));
-    if (!q) return candidates.slice(0, 30);
-    return candidates
-      .filter(p => p.includes(q) || p.replace('USDT', '').includes(q))
-      .slice(0, 60);
-  }, [availableSymbols, watchlist, normalizedSearch]);
-  const canAddTyped = searchWithQuote
-    && availableSymbols.includes(searchWithQuote)
-    && !watchlist.includes(searchWithQuote);
-
+function Markets({ watchlist, setSelectedSymbol, setTab }) {
   const onClickSymbol = (symbol) => {
     setSelectedSymbol(symbol);
     setTab('chart');
   };
 
   return (
-    <div className="space-y-4">
-      <div className="flex items-center justify-between gap-3 flex-wrap">
-        <div className="flex gap-2">
-          {[
-            { id: 'change', label: 'CAMBIO' },
-            { id: 'volume', label: 'VOLUMEN' },
-            { id: 'price',  label: 'PRECIO' }
-          ].map(s => (
-            <button key={s.id} onClick={() => setSortBy(s.id)}
-              className={`px-3 py-1.5 text-[10px] tracking-[0.2em] border transition-colors ${
-                sortBy === s.id
-                  ? 'border-amber-500/60 text-amber-400 bg-amber-500/5'
-                  : 'border-zinc-800 text-zinc-500 hover:text-zinc-300'
-              }`}>{s.label}</button>
-          ))}
-        </div>
-        <button onClick={() => setShowAdd(!showAdd)}
-          className="px-3 py-1.5 text-[10px] tracking-[0.2em] border border-zinc-800 hover:border-cyan-500/60 hover:text-cyan-400 text-zinc-300 inline-flex items-center gap-1.5">
-          <Plus className="w-3 h-3" /> AGREGAR PAR
-        </button>
-      </div>
-
-      {showAdd && (
-        <div className="border border-zinc-800 bg-zinc-900/40 p-4">
-          <div className="flex items-center justify-between gap-3 flex-wrap mb-3">
-            <div>
-              <div className="text-[10px] tracking-[0.2em] text-zinc-500">BUSCAR PAR SPOT USDT</div>
-              <div className="text-[10px] text-zinc-600 mt-0.5">
-                {symbolsStatus === 'live'
-                  ? `${availableSymbols.length} pares cargados desde Binance`
-                  : symbolsStatus === 'error'
-                    ? 'usando lista local; Binance no respondió'
-                    : 'cargando catálogo Binance...'}
-              </div>
-            </div>
-            <div className="flex gap-2 w-full sm:w-auto">
-              <input value={pairSearch} onChange={e => setPairSearch(e.target.value)}
-                placeholder="PEPE, WIF, BTC, 1000SATS..."
-                className="w-full sm:w-72 bg-zinc-950 border border-zinc-800 px-3 py-2 text-xs tabular focus:outline-none focus:border-cyan-500/50" />
-              <button onClick={() => canAddTyped && addToWatchlist(searchWithQuote)}
-                disabled={!canAddTyped}
-                className={`px-3 py-2 text-[10px] tracking-[0.16em] border transition-colors ${
-                  canAddTyped
-                    ? 'border-cyan-500/50 text-cyan-400 hover:bg-cyan-500/10'
-                    : 'border-zinc-800 text-zinc-700 cursor-not-allowed'
-                }`}>
-                ADD
-              </button>
-            </div>
-          </div>
-
-          <div className="grid grid-cols-3 sm:grid-cols-5 lg:grid-cols-8 gap-2 max-h-64 overflow-y-auto pr-1 scrollbar-hidden">
-            {filteredAvailable.map(p => (
-              <button key={p} onClick={() => { addToWatchlist(p); }}
-                className="text-[11px] py-1.5 border border-zinc-800 hover:border-amber-500/60 hover:text-amber-400 text-zinc-400 tabular">
-                {p.replace('USDT', '')}
-              </button>
-            ))}
-            {filteredAvailable.length === 0 && (
-              <div className="col-span-full py-6 text-center text-xs text-zinc-500">
-                // sin resultados para {pairSearch || 'búsqueda'}
-              </div>
-            )}
-          </div>
-        </div>
-      )}
-
-      <Panel title={`WATCHLIST · ${watchlist.length} PARES`}
-             subtitle={status === 'live' ? '// datos en vivo · refresco 1s' : '// reconectando...'}>
-        <div className="hidden sm:grid grid-cols-12 gap-2 px-4 py-2 border-b border-zinc-800 text-[9px] tracking-[0.2em] text-zinc-600">
-          <div className="col-span-3">SYMBOL</div>
-          <div className="col-span-2 text-right">PRECIO</div>
-          <div className="col-span-2 text-right">24H</div>
-          <div className="col-span-2 text-right">HIGH 24H</div>
-          <div className="col-span-2 text-right">VOL 24H</div>
-          <div className="col-span-1"></div>
-        </div>
-        {sorted.length === 0 ? (
-          <div className="px-4 py-8 text-center text-zinc-500 text-sm">// cargando precios...</div>
-        ) : (
-          <div className="divide-y divide-zinc-800">
-            {sorted.map(t => {
-              const change = parseFloat(t.priceChangePercent);
-              const flash = flashMap[t.symbol];
-              const flashClass = flash === 'up'
-                ? 'bg-emerald-500/12 shadow-[inset_3px_0_0_rgba(52,211,153,0.9)]'
-                : flash === 'down'
-                  ? 'bg-red-500/12 shadow-[inset_3px_0_0_rgba(248,113,113,0.9)]'
-                  : '';
-              return (
-                <div key={t.symbol}
-                     className={`relative px-4 py-3 hover:bg-zinc-900/60 transition-all duration-300 cursor-pointer overflow-hidden ${flashClass}`}
-                     onClick={() => onClickSymbol(t.symbol)}>
-                  {flash && (
-                    <div className={`pointer-events-none absolute inset-y-0 left-0 w-full ${
-                      flash === 'up'
-                        ? 'bg-gradient-to-r from-emerald-400/20 via-emerald-400/5 to-transparent'
-                        : 'bg-gradient-to-r from-red-400/20 via-red-400/5 to-transparent'
-                    }`} />
-                  )}
-                  <div className="grid grid-cols-12 gap-2 items-center">
-                    <div className="col-span-5 sm:col-span-3 min-w-0">
-                      <div className="relative flex items-center gap-2 text-sm tabular text-zinc-100">
-                        <span className={`h-1.5 w-1.5 rounded-full ${
-                          flash === 'up' ? 'bg-emerald-400 animate-ping'
-                          : flash === 'down' ? 'bg-red-400 animate-ping'
-                          : status === 'live' ? 'bg-zinc-600' : 'bg-amber-400 pulse-soft'
-                        }`} />
-                        {t.symbol.replace('USDT', '')}
-                        <span className="text-zinc-600 text-[10px] ml-1">/USDT</span>
-                      </div>
-                    </div>
-                    <div className={`relative col-span-3 sm:col-span-2 text-right tabular text-sm transition-colors ${
-                      flash === 'up' ? 'text-emerald-300' : flash === 'down' ? 'text-red-300' : 'text-zinc-100'
-                    }`}>
-                      ${fmtPrice(t.lastPrice)}
-                    </div>
-                    <div className={`col-span-3 sm:col-span-2 text-right tabular text-sm ${
-                      change >= 0 ? 'text-emerald-400' : 'text-red-400'
-                    }`}>
-                      {sign(change)}{fmt(change, 2)}%
-                    </div>
-                    <div className="hidden sm:block col-span-2 text-right tabular text-xs text-zinc-400">
-                      ${fmtPrice(t.highPrice)}
-                    </div>
-                    <div className="hidden sm:block col-span-2 text-right tabular text-xs text-zinc-500">
-                      ${fmtVolume(t.quoteVolume)}
-                    </div>
-                    <div className="col-span-1 text-right">
-                      <button onClick={(e) => { e.stopPropagation(); removeFromWatchlist(t.symbol); }}
-                              className="text-zinc-700 hover:text-red-400 p-1">
-                        <X className="w-3 h-3" />
-                      </button>
-                    </div>
-                  </div>
-                </div>
-              );
-            })}
-          </div>
-        )}
-      </Panel>
-    </div>
+    <MarketsSection symbols={watchlist} onSelectSymbol={onClickSymbol} />
   );
 }
 
