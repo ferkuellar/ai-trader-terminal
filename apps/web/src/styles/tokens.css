@@ -1,0 +1,58 @@
+:root {
+  --color-bg-base: #050814;
+  --color-bg-surface: #0A0F1E;
+  --color-bg-card: #0F1629;
+  --color-bg-elevated: #162040;
+  --color-bg-overlay: rgba(5, 8, 20, 0.85);
+
+  --color-border-subtle: #0F1E35;
+  --color-border-default: #1E3A5F;
+  --color-border-strong: #2A4F7C;
+  --color-border-focus: #00D4FF;
+  --color-border-glow: rgba(0, 212, 255, 0.18);
+
+  --color-text-primary: #E8EDF5;
+  --color-text-secondary: #A8B9CC;
+  --color-text-muted: #7A8BA3;
+  --color-text-disabled: #3D4E65;
+  --color-text-placeholder: #2A3D52;
+
+  --color-action: #00D4FF;
+  --color-action-hover: #40DFFF;
+  --color-action-bg: #00121F;
+  --color-action-border: #0094C4;
+  --color-action-text: #050814;
+
+  --color-profit: #00E676;
+  --color-profit-hover: #40EE95;
+  --color-profit-bg: #001A09;
+  --color-profit-border: #00A650;
+
+  --color-risk: #FFB300;
+  --color-risk-hover: #FFC540;
+  --color-risk-bg: #1A0B00;
+  --color-risk-border: #A67600;
+
+  --color-loss: #FF3B30;
+  --color-loss-hover: #FF6B63;
+  --color-loss-bg: #1A0000;
+  --color-loss-border: #CC1A17;
+
+  --color-info: #0094FF;
+  --color-info-bg: #000D1A;
+  --color-info-border: #0066CC;
+
+  --color-achievement: #9B59FF;
+  --color-achievement-bg: #0D0014;
+  --color-achievement-border: #6600CC;
+
+  --font-terminal: "JetBrains Mono", "Fira Code", "Courier New", monospace;
+  --font-ui: Inter, -apple-system, BlinkMacSystemFont, sans-serif;
+
+  --shadow-card: 0 1px 3px rgba(0, 0, 0, 0.6);
+  --shadow-modal: 0 8px 32px rgba(0, 0, 0, 0.8);
+  --glow-cyan: 0 0 12px rgba(0, 212, 255, 0.25);
+  --glow-green: 0 0 12px rgba(0, 230, 118, 0.2);
+  --glow-red: 0 0 12px rgba(255, 59, 48, 0.2);
+  --glow-amber: 0 0 12px rgba(255, 179, 0, 0.2);
+}
