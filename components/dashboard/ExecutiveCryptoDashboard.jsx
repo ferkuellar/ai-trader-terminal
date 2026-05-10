@@ -127,7 +127,7 @@ function MiniMetric({ label, value, tone = "zinc" }) {
   );
 }
 
-export default function ExecutiveCryptoDashboard({ analyses = [], watchlist = [], setTab }) {
+export default function ExecutiveCryptoDashboard({ analyses = [], watchlist = [], setTab, className = "" }) {
   const compareSnapshots = analyses.filter(item => item.type === "crypto_compare");
   const watchlistSnapshots = analyses.filter(item => item.type === "crypto_watchlist_snapshot");
   const rows = collectLatestWatchlistRows(watchlistSnapshots);
@@ -142,7 +142,7 @@ export default function ExecutiveCryptoDashboard({ analyses = [], watchlist = []
   const highRiskCount = rows.filter(row => row.riskLevel === "High").length;
 
   return (
-    <section className="border border-cyan-500/25 bg-cyan-500/5">
+    <section className={`flex min-h-0 flex-col border border-cyan-500/25 bg-cyan-500/5 ${className}`}>
       <div className="px-4 py-3 border-b border-zinc-800 flex items-center justify-between gap-3">
         <div>
           <div className="flex items-center gap-2">
@@ -161,7 +161,7 @@ export default function ExecutiveCryptoDashboard({ analyses = [], watchlist = []
         </button>
       </div>
 
-      <div className="p-4 space-y-4">
+      <div className="min-h-0 flex-1 space-y-4 overflow-y-auto p-4 scrollbar-hidden">
         <div className="grid grid-cols-2 lg:grid-cols-5 gap-2">
           <MiniMetric label="Watchlist Snapshots" value={watchlistSnapshots.length} tone="cyan" />
           <MiniMetric label="Compare Snapshots" value={compareSnapshots.length} tone="cyan" />

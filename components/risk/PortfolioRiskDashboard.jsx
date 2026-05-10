@@ -26,12 +26,71 @@ const severityClass = (severity) => {
   return "border-cyan-500/25 bg-cyan-950/15 text-cyan-300";
 };
 
-function SummaryCard({ label, value, sub, tone = "text-zinc-100" }) {
+const clampPct = (value) => Math.max(0, Math.min(100, Number(value) || 0));
+
+const polarToCartesian = (cx, cy, radius, angleInDegrees) => {
+  const angleInRadians = (angleInDegrees * Math.PI) / 180;
+  return {
+    x: cx + radius * Math.cos(angleInRadians),
+    y: cy + radius * Math.sin(angleInRadians),
+  };
+};
+
+const arcPath = (startAngle, endAngle, radius = 54) => {
+  const start = polarToCartesian(70, 70, radius, startAngle);
+  const end = polarToCartesian(70, 70, radius, endAngle);
+  const largeArcFlag = endAngle - startAngle <= 180 ? "0" : "1";
+  return `M ${start.x} ${start.y} A ${radius} ${radius} 0 ${largeArcFlag} 1 ${end.x} ${end.y}`;
+};
+
+function Gauge({ pct }) {
+  const segments = 12;
+  const activeSegments = Math.ceil((clampPct(pct) / 100) * segments);
+  const segmentSize = 180 / segments;
+
   return (
-    <div className="border border-zinc-800 bg-zinc-950/70 p-3">
-      <div className="text-[10px] tracking-[0.18em] text-zinc-500">{label}</div>
-      <div className={`mt-1 tabular text-lg font-semibold ${tone}`}>{value}</div>
-      {sub && <div className="mt-1 text-[11px] text-zinc-500">{sub}</div>}
+    <svg viewBox="0 0 140 78" className="h-full w-full" aria-hidden="true">
+      {Array.from({ length: segments }).map((_, index) => {
+        const start = 180 + index * segmentSize + 1.8;
+        const end = 180 + (index + 1) * segmentSize - 1.8;
+        const active = index < activeSegments;
+        const color = index < 5 ? "#10b981" : index < 9 ? "#facc15" : "#ef4444";
+
+        return (
+          <path
+            key={index}
+            d={arcPath(start, end)}
+            fill="none"
+            stroke={active ? color : "#27272a"}
+            strokeLinecap="round"
+            strokeWidth="8"
+            opacity={active ? 0.95 : 0.7}
+          />
+        );
+      })}
+    </svg>
+  );
+}
+
+function SummaryCard({ label, value, tone = "text-zinc-100", meter = 0, status = "TRACK" }) {
+  const meterPct = clampPct(meter);
+
+  return (
+    <div className="flex min-h-[148px] flex-col justify-between border border-zinc-800 bg-zinc-950/70 p-3">
+      <div className="flex items-center justify-between gap-2">
+        <div className="text-[9px] tracking-[0.18em] text-zinc-500">{label}</div>
+        <div className={`border border-zinc-800 px-1.5 py-0.5 text-[8px] font-semibold tracking-[0.12em] ${tone}`}>
+          {status}
+        </div>
+      </div>
+
+      <div className="relative mx-auto mt-2 h-20 w-full max-w-[170px] overflow-hidden">
+        <Gauge pct={meterPct} />
+      </div>
+
+      <div className={`mt-1 text-center tabular text-xl font-bold leading-none ${tone}`}>
+        {value}
+      </div>
     </div>
   );
 }
@@ -76,6 +135,15 @@ export default function PortfolioRiskDashboard({ dashboard }) {
   const bySymbol = dashboard.bySymbol || [];
   const dataQuality = dashboard.dataQuality || {};
   const hasOpenPositions = (summary.openPositionsCount || 0) > 0;
+  const openRiskUsagePct = summary.maxPortfolioRiskPct
+    ? (summary.totalOpenRiskPct / summary.maxPortfolioRiskPct) * 100
+    : 0;
+  const positionUsagePct = summary.maxOpenPositions
+    ? ((summary.openPositionsCount || 0) / summary.maxOpenPositions) * 100
+    : 0;
+  const drawdownUsagePct = drawdown.maxTotalDrawdownPct
+    ? (drawdown.totalDrawdownPct / drawdown.maxTotalDrawdownPct) * 100
+    : drawdown.totalDrawdownPct;
 
   return (
     <section className="border border-zinc-800 bg-black/40">
@@ -97,97 +165,56 @@ export default function PortfolioRiskDashboard({ dashboard }) {
       </div>
 
       <div className="space-y-4 p-4">
-        <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-6">
+        <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-10">
           <SummaryCard
             label="OPEN RISK"
             value={money(summary.totalOpenRiskAmount)}
-            sub={`${fmt(summary.totalOpenRiskPct)}% of capital`}
+            sub={`${fmt(summary.totalOpenRiskPct)}% of capital · limit ${fmt(summary.maxPortfolioRiskPct)}%`}
             tone={summary.totalOpenRiskPct >= summary.maxPortfolioRiskPct ? "text-red-400" : "text-amber-300"}
+            meter={openRiskUsagePct}
+            status={summary.totalOpenRiskPct >= summary.maxPortfolioRiskPct ? "LIMIT" : "OPEN"}
           />
           <SummaryCard
             label="RISK CAPACITY"
             value={`${fmt(summary.riskCapacityRemainingPct)}%`}
             sub={`${money(summary.riskCapacityRemainingAmount)} remaining`}
             tone={summary.riskCapacityRemainingPct <= 0 ? "text-red-400" : "text-emerald-400"}
+            meter={100 - summary.riskCapacityRemainingPct}
+            status={summary.riskCapacityRemainingPct <= 0 ? "FULL" : "ROOM"}
           />
           <SummaryCard
             label="NOTIONAL"
             value={money(summary.totalNotionalExposure)}
             sub={`${fmt(summary.totalNotionalExposurePct)}% exposure`}
             tone="text-cyan-300"
+            meter={summary.totalNotionalExposurePct}
+            status={summary.totalNotionalExposurePct > 0 ? "LIVE" : "FLAT"}
           />
           <SummaryCard
             label="OPEN POSITIONS"
             value={`${summary.openPositionsCount || 0}/${summary.maxOpenPositions || 0}`}
             sub="current / max"
             tone={summary.openPositionsCount >= summary.maxOpenPositions ? "text-red-400" : "text-zinc-100"}
+            meter={positionUsagePct}
+            status={summary.openPositionsCount >= summary.maxOpenPositions ? "MAX" : "SLOTS"}
           />
           <SummaryCard
             label="DAILY STOP"
             value={`${fmt(daily.dailyStopUsedPct)}% used`}
             sub={`${fmt(daily.dailyStopRemainingPct)}% remaining`}
             tone={daily.status === "LOCKDOWN" ? "text-red-400" : daily.status === "CAUTION" ? "text-amber-400" : "text-emerald-400"}
+            meter={daily.dailyStopUsedPct}
+            status={daily.status || "SAFE"}
           />
           <SummaryCard
             label="DRAWDOWN"
             value={`${fmt(drawdown.totalDrawdownPct)}%`}
             sub={drawdown.maxTotalDrawdownPct ? `limit ${fmt(drawdown.maxTotalDrawdownPct)}%` : "no hard limit"}
             tone={drawdown.status === "LOCKDOWN" || drawdown.status === "DANGER" ? "text-red-400" : "text-zinc-100"}
+            meter={drawdownUsagePct}
+            status={drawdown.status || "TRACK"}
           />
-        </div>
-
-        <div className="grid gap-3 lg:grid-cols-2">
-          <DirectionCard title="LONG EXPOSURE" data={byDirection.long} />
-          <DirectionCard title="SHORT EXPOSURE" data={byDirection.short} />
-        </div>
-
-        <div className="border border-zinc-800 bg-zinc-950/50">
-          <div className="flex items-center gap-2 border-b border-zinc-800 px-3 py-2">
-            <BarChart3 className="h-3.5 w-3.5 text-cyan-400" />
-            <div className="text-[10px] tracking-[0.18em] text-zinc-500">RISK BY SYMBOL</div>
-          </div>
-          {!hasOpenPositions ? (
-            <div className="p-4 text-sm text-zinc-500">No open positions. Portfolio risk is currently flat.</div>
-          ) : (
-            <div className="overflow-x-auto">
-              <table className="w-full min-w-[760px] text-left text-xs">
-                <thead className="bg-zinc-950 text-[10px] uppercase tracking-[0.16em] text-zinc-500">
-                  <tr>
-                    <th className="px-3 py-2">Symbol</th>
-                    <th className="px-3 py-2 text-right">Open</th>
-                    <th className="px-3 py-2 text-right">Long</th>
-                    <th className="px-3 py-2 text-right">Short</th>
-                    <th className="px-3 py-2 text-right">Open Risk</th>
-                    <th className="px-3 py-2 text-right">Risk %</th>
-                    <th className="px-3 py-2 text-right">Notional</th>
-                    <th className="px-3 py-2 text-right">Exposure %</th>
-                    <th className="px-3 py-2">Data</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {bySymbol.map((row) => (
-                    <tr key={row.symbol} className="border-t border-zinc-800">
-                      <td className="px-3 py-2 font-semibold text-zinc-100">{row.symbol}</td>
-                      <td className="px-3 py-2 text-right tabular text-zinc-300">{row.openTrades}</td>
-                      <td className="px-3 py-2 text-right tabular text-emerald-300">{row.longTrades}</td>
-                      <td className="px-3 py-2 text-right tabular text-red-300">{row.shortTrades}</td>
-                      <td className="px-3 py-2 text-right tabular text-amber-300">{money(row.openRiskAmount)}</td>
-                      <td className="px-3 py-2 text-right tabular text-amber-300">{fmt(row.openRiskPct)}%</td>
-                      <td className="px-3 py-2 text-right tabular text-cyan-300">{money(row.notionalExposure)}</td>
-                      <td className="px-3 py-2 text-right tabular text-cyan-300">{fmt(row.notionalExposurePct)}%</td>
-                      <td className={`px-3 py-2 text-[10px] tracking-[0.14em] ${row.missingRiskData ? "text-red-400" : "text-emerald-400"}`}>
-                        {row.missingRiskData ? "INCOMPLETE" : "OK"}
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          )}
-        </div>
-
-        <div className="grid gap-3 lg:grid-cols-[1.4fr_1fr]">
-          <div className="border border-zinc-800 bg-zinc-950/50 p-3">
+          <div className="border border-zinc-800 bg-zinc-950/50 p-3 sm:col-span-2">
             <div className="mb-2 flex items-center gap-2">
               <AlertTriangle className="h-3.5 w-3.5 text-amber-400" />
               <div className="text-[10px] tracking-[0.18em] text-zinc-500">CAPITAL PRESERVATION ALERTS</div>
@@ -195,9 +222,9 @@ export default function PortfolioRiskDashboard({ dashboard }) {
             {dashboard.alerts?.length ? (
               <div className="space-y-2">
                 {dashboard.alerts.map((item) => (
-                  <div key={`${item.id}-${item.message}`} className={`border p-3 ${severityClass(item.severity)}`}>
+                  <div key={`${item.id}-${item.message}`} className={`border p-2 ${severityClass(item.severity)}`}>
                     <div className="text-xs font-semibold text-zinc-100">{item.title}</div>
-                    <div className="mt-1 text-xs text-zinc-300">{item.message}</div>
+                    <div className="mt-1 text-[11px] text-zinc-300">{item.message}</div>
                     <div className="mt-1 text-[11px] text-zinc-500">{item.recommendation}</div>
                   </div>
                 ))}
@@ -206,8 +233,7 @@ export default function PortfolioRiskDashboard({ dashboard }) {
               <div className="text-sm text-zinc-500">No active preservation alerts.</div>
             )}
           </div>
-
-          <div className="border border-zinc-800 bg-zinc-950/50 p-3">
+          <div className="border border-zinc-800 bg-zinc-950/50 p-3 sm:col-span-2">
             <div className="mb-2 text-[10px] tracking-[0.18em] text-zinc-500">DATA QUALITY</div>
             <div className="grid grid-cols-2 gap-2 text-xs">
               <div>
@@ -236,6 +262,59 @@ export default function PortfolioRiskDashboard({ dashboard }) {
               {dashboard.disclaimer}
             </div>
           </div>
+        </div>
+
+        <div className="grid gap-3 lg:grid-cols-[minmax(0,1.45fr)_minmax(320px,0.9fr)]">
+          <div className="border border-zinc-800 bg-zinc-950/50">
+            <div className="flex items-center gap-2 border-b border-zinc-800 px-3 py-2">
+              <BarChart3 className="h-3.5 w-3.5 text-cyan-400" />
+              <div className="text-[10px] tracking-[0.18em] text-zinc-500">RISK BY SYMBOL</div>
+            </div>
+            {!hasOpenPositions ? (
+              <div className="p-4 text-sm text-zinc-500">No open positions. Portfolio risk is currently flat.</div>
+            ) : (
+              <div className="overflow-x-auto">
+                <table className="w-full min-w-[760px] text-left text-xs">
+                  <thead className="bg-zinc-950 text-[10px] uppercase tracking-[0.16em] text-zinc-500">
+                    <tr>
+                      <th className="px-3 py-2">Symbol</th>
+                      <th className="px-3 py-2 text-right">Open</th>
+                      <th className="px-3 py-2 text-right">Long</th>
+                      <th className="px-3 py-2 text-right">Short</th>
+                      <th className="px-3 py-2 text-right">Open Risk</th>
+                      <th className="px-3 py-2 text-right">Risk %</th>
+                      <th className="px-3 py-2 text-right">Notional</th>
+                      <th className="px-3 py-2 text-right">Exposure %</th>
+                      <th className="px-3 py-2">Data</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {bySymbol.map((row) => (
+                      <tr key={row.symbol} className="border-t border-zinc-800">
+                        <td className="px-3 py-2 font-semibold text-zinc-100">{row.symbol}</td>
+                        <td className="px-3 py-2 text-right tabular text-zinc-300">{row.openTrades}</td>
+                        <td className="px-3 py-2 text-right tabular text-emerald-300">{row.longTrades}</td>
+                        <td className="px-3 py-2 text-right tabular text-red-300">{row.shortTrades}</td>
+                        <td className="px-3 py-2 text-right tabular text-amber-300">{money(row.openRiskAmount)}</td>
+                        <td className="px-3 py-2 text-right tabular text-amber-300">{fmt(row.openRiskPct)}%</td>
+                        <td className="px-3 py-2 text-right tabular text-cyan-300">{money(row.notionalExposure)}</td>
+                        <td className="px-3 py-2 text-right tabular text-cyan-300">{fmt(row.notionalExposurePct)}%</td>
+                        <td className={`px-3 py-2 text-[10px] tracking-[0.14em] ${row.missingRiskData ? "text-red-400" : "text-emerald-400"}`}>
+                          {row.missingRiskData ? "INCOMPLETE" : "OK"}
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            )}
+          </div>
+
+          <div className="space-y-3">
+            <DirectionCard title="LONG EXPOSURE" data={byDirection.long} />
+            <DirectionCard title="SHORT EXPOSURE" data={byDirection.short} />
+
+        </div>
         </div>
       </div>
     </section>
