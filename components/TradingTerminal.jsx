@@ -771,7 +771,7 @@ export default function TradingTerminal() {
                 language={language} setLanguage={changeLanguage} t={t} />
         <TabNav tab={tab} setTab={setTab} activeChallenge={activeChallenge} t={t} />
 
-        <main className="max-w-6xl mx-auto px-3 sm:px-6 pb-24 pt-5">
+        <main className="mx-auto w-full max-w-[1800px] px-4 pb-24 pt-5 sm:px-6 lg:px-8 2xl:px-10">
           {tab === 'dashboard' && (
             <Dashboard config={config} metrics={metrics} trades={trades}
                        saveTrades={saveTrades}
@@ -870,7 +870,7 @@ function TickerBar({ tickers, status, t }) {
   if (!items.length) {
     return (
       <div className="bg-zinc-900/80 border-b border-zinc-800">
-        <div className="max-w-6xl mx-auto px-3 sm:px-6 py-1.5 text-[10px] tracking-wider text-zinc-500">
+        <div className="mx-auto w-full max-w-[1800px] px-4 py-1.5 text-[10px] tracking-wider text-zinc-500 sm:px-6 lg:px-8 2xl:px-10">
           {t('connectingBinance')}
         </div>
       </div>
@@ -879,7 +879,7 @@ function TickerBar({ tickers, status, t }) {
 
   return (
     <div className="bg-zinc-900/80 border-b border-zinc-800 overflow-hidden">
-      <div className="max-w-6xl mx-auto px-3 sm:px-6 py-1.5 flex items-center gap-3 text-[11px] tabular">
+      <div className="mx-auto flex w-full max-w-[1800px] items-center gap-3 px-4 py-1.5 text-[11px] tabular sm:px-6 lg:px-8 2xl:px-10">
         <div className="flex min-w-0 flex-1 items-center gap-4 sm:gap-6 overflow-x-auto scrollbar-hidden">
           {items.map(ticker => {
             const change = parseFloat(ticker.priceChangePercent);
@@ -919,7 +919,7 @@ function Header({ config, metrics, activeChallenge, challengeEval, language, set
 
   return (
     <header className="border-b border-zinc-800/80 bg-zinc-950/95 backdrop-blur sticky top-0 z-30">
-      <div className="max-w-6xl mx-auto px-4 sm:px-6 py-4">
+      <div className="mx-auto w-full max-w-[1800px] px-4 py-4 sm:px-6 lg:px-8 2xl:px-10">
         <div className="flex items-center justify-between mb-3">
           <div className="flex items-center gap-2">
             <div className="w-1.5 h-1.5 bg-emerald-400 rounded-full pulse-soft" />
@@ -1020,7 +1020,7 @@ function TabNav({ tab, setTab, activeChallenge, t }) {
 
   return (
     <nav className="border-b border-zinc-800/80 bg-zinc-950/90 sticky top-[145px] sm:top-[157px] z-20">
-      <div className="max-w-6xl mx-auto px-1 sm:px-6 overflow-x-auto scrollbar-hidden">
+      <div className="mx-auto w-full max-w-[1800px] overflow-x-auto px-1 scrollbar-hidden sm:px-6 lg:px-8 2xl:px-10">
         <div className="flex min-w-max">
           {tabs.map(({ id, label, icon: Icon }) => {
             const active = tab === id;
@@ -1206,182 +1206,194 @@ function Dashboard({
   ];
 
   return (
-    <div className="space-y-5">
-      {/* Active challenge quick widget */}
-      {activeChallenge && challengeEval && (
-        <button onClick={() => setTab('challenges')}
-          className="w-full text-left border border-amber-500/30 bg-amber-500/5 hover:bg-amber-500/10 p-4 transition-colors">
-          <div className="flex items-center justify-between mb-2">
-            <div className="flex items-center gap-2">
-              <Trophy className="w-4 h-4 text-amber-400" />
-              <div className="text-[11px] tracking-[0.2em] text-amber-400">{t('activeChallenge')}</div>
-              <div className="text-sm text-zinc-100">{activeChallenge.name}</div>
-            </div>
-            <ChevronRight className="w-4 h-4 text-zinc-500" />
-          </div>
-          <div className="grid grid-cols-3 gap-3 text-xs">
-            <div>
-              <div className="text-zinc-500 text-[10px]">{t('progress')}</div>
-              <div className="tabular text-zinc-200">{fmt(challengeEval.progressPct, 1)}%</div>
-            </div>
-            <div>
-              <div className="text-zinc-500 text-[10px]">{t('dailyDd')}</div>
-              <div className={`tabular ${
-                challengeEval.dailyDDUsedPct > 80 ? 'text-red-400'
-                : challengeEval.dailyDDUsedPct > 50 ? 'text-amber-400' : 'text-zinc-200'
-              }`}>{fmt(challengeEval.dailyDDUsedPct, 0)}% {t('used')}</div>
-            </div>
-            <div>
-              <div className="text-zinc-500 text-[10px]">{t('totalDd')}</div>
-              <div className={`tabular ${
-                challengeEval.totalDDUsedPct > 80 ? 'text-red-400'
-                : challengeEval.totalDDUsedPct > 50 ? 'text-amber-400' : 'text-zinc-200'
-              }`}>{fmt(challengeEval.totalDDUsedPct, 0)}% {t('used')}</div>
-            </div>
-          </div>
-        </button>
-      )}
-
-      {/* Achievements row */}
-      {achievements && achievements.length > 0 && (
-        <div className="border border-zinc-800 bg-zinc-900/40 px-4 py-3">
-          <div className="flex items-center gap-2 mb-2">
-            <Medal className="w-3.5 h-3.5 text-amber-400" />
-            <div className="text-[10px] tracking-[0.2em] text-zinc-500">{t('achievements')} · {achievements.length}/{ACHIEVEMENTS.length}</div>
-          </div>
-          <div className="flex gap-2 overflow-x-auto scrollbar-hidden">
-            {achievements.slice(-6).reverse().map(a => (
-              <div key={a.id}
-                title={a.desc}
-                className="flex-shrink-0 border border-amber-500/30 bg-amber-500/5 px-2.5 py-1 text-[10px] text-amber-400 whitespace-nowrap">
-                <Medal className="w-2.5 h-2.5 inline mr-1" />
-                {a.name}
+    <div className="grid w-full grid-cols-1 gap-4 xl:grid-cols-12 2xl:grid-cols-16">
+      <aside className="flex h-full min-h-0 flex-col gap-4 xl:col-span-3 2xl:col-span-3">
+        {activeChallenge && challengeEval && (
+          <button onClick={() => setTab('challenges')}
+            className="w-full text-left border border-amber-500/30 bg-amber-500/5 hover:bg-amber-500/10 p-4 transition-colors">
+            <div className="flex items-center justify-between gap-3 mb-2">
+              <div className="flex min-w-0 items-center gap-2">
+                <Trophy className="w-4 h-4 flex-shrink-0 text-amber-400" />
+                <div className="text-[11px] tracking-[0.2em] text-amber-400">{t('activeChallenge')}</div>
               </div>
-            ))}
-          </div>
-        </div>
-      )}
-
-      {trades.length === 0 && (
-        <div className="border border-zinc-800 bg-zinc-900/40 p-8 text-center">
-          <div className="text-amber-400 text-xs tracking-[0.3em] mb-3">{t('noTradesTitle')}</div>
-          <div className="text-zinc-300 mb-2">{t('noTradesBody')}</div>
-          <div className="text-zinc-500 text-sm mb-6">
-            {t('currentRiskPerTrade')}{' '}
-            <span className="text-amber-400">${fmt(config.initialCapital * config.riskPctPerTrade / 100, 2)}</span>.
-          </div>
-          <button onClick={() => setTab('markets')}
-            className="inline-flex items-center gap-2 bg-amber-500 hover:bg-amber-400 text-zinc-950 px-5 py-2.5 text-xs font-bold tracking-[0.2em]">
-            <Activity className="w-4 h-4" /> {t('exploreMarkets')}
+              <ChevronRight className="w-4 h-4 flex-shrink-0 text-zinc-500" />
+            </div>
+            <div className="mb-3 truncate text-sm text-zinc-100">{activeChallenge.name}</div>
+            <div className="grid grid-cols-3 gap-3 text-xs">
+              <div>
+                <div className="text-zinc-500 text-[10px]">{t('progress')}</div>
+                <div className="tabular text-zinc-200">{fmt(challengeEval.progressPct, 1)}%</div>
+              </div>
+              <div>
+                <div className="text-zinc-500 text-[10px]">{t('dailyDd')}</div>
+                <div className={`tabular ${
+                  challengeEval.dailyDDUsedPct > 80 ? 'text-red-400'
+                  : challengeEval.dailyDDUsedPct > 50 ? 'text-amber-400' : 'text-zinc-200'
+                }`}>{fmt(challengeEval.dailyDDUsedPct, 0)}% {t('used')}</div>
+              </div>
+              <div>
+                <div className="text-zinc-500 text-[10px]">{t('totalDd')}</div>
+                <div className={`tabular ${
+                  challengeEval.totalDDUsedPct > 80 ? 'text-red-400'
+                  : challengeEval.totalDDUsedPct > 50 ? 'text-amber-400' : 'text-zinc-200'
+                }`}>{fmt(challengeEval.totalDDUsedPct, 0)}% {t('used')}</div>
+              </div>
+            </div>
           </button>
-        </div>
-      )}
+        )}
 
-      {(overRisk || tooMany) && (
-        <div className="border border-red-500/40 bg-red-500/5 p-4 flex items-start gap-3">
-          <AlertTriangle className="w-5 h-5 text-red-400 flex-shrink-0 mt-0.5" />
-          <div>
-            <div className="text-red-400 text-xs tracking-wider mb-1">{t('guardrailViolated')}</div>
-            <ul className="text-sm text-zinc-300 space-y-1">
-              {overRisk && <li>{t('exposedRisk')} {fmt(openRiskPct, 1)}% &gt; {t('limit')} {config.maxPortfolioRiskPct}%</li>}
-              {tooMany && <li>{open.length} {t('openPositions')} — {t('max')} {config.maxOpenPositions}</li>}
-            </ul>
+        {achievements && achievements.length > 0 && (
+          <div className="border border-zinc-800 bg-zinc-900/40 px-4 py-3">
+            <div className="flex items-center gap-2 mb-2">
+              <Medal className="w-3.5 h-3.5 text-amber-400" />
+              <div className="text-[10px] tracking-[0.2em] text-zinc-500">{t('achievements')} · {achievements.length}/{ACHIEVEMENTS.length}</div>
+            </div>
+            <div className="flex gap-2 overflow-x-auto scrollbar-hidden">
+              {achievements.slice(-6).reverse().map(a => (
+                <div key={a.id}
+                  title={a.desc}
+                  className="flex-shrink-0 border border-amber-500/30 bg-amber-500/5 px-2.5 py-1 text-[10px] text-amber-400 whitespace-nowrap">
+                  <Medal className="w-2.5 h-2.5 inline mr-1" />
+                  {a.name}
+                </div>
+              ))}
+            </div>
           </div>
-        </div>
-      )}
+        )}
 
-      <TrainingCommandCenter
-        readinessScore={readinessScore}
-        readinessChecks={readinessChecks}
-        confidenceLevel={confidenceLevel}
-        mistakeTax={mistakeTax}
-        onPlanAvgR={onPlanAvgR}
-        offPlanAvgR={offPlanAvgR}
-        nextChallenge={nextChallenge}
-        riskRemainingToday={riskRemainingToday}
-        dailyRiskBudget={dailyRiskBudget}
-        setTab={setTab}
-        t={t}
-      />
+        <ExecutiveCryptoDashboard
+          analyses={analyses}
+          watchlist={watchlist}
+          setTab={setTab}
+          className="flex-1"
+        />
+      </aside>
 
-      <ExecutiveCryptoDashboard
-        analyses={analyses}
-        watchlist={watchlist}
-        setTab={setTab}
-      />
-
-      <PortfolioRiskDashboard dashboard={portfolioRiskDashboard} />
-
-      <div className="border border-zinc-800 bg-black/40 shadow-[0_0_40px_rgba(245,158,11,0.06)]">
-        <div className="flex items-center justify-between border-b border-zinc-800 px-3 sm:px-4 py-2 bg-zinc-950/80">
-          <div className="flex items-center gap-2">
-            <LineIcon className="w-3.5 h-3.5 text-amber-400" />
-            <div className="text-[10px] tracking-[0.24em] text-zinc-400">{t('performanceTerminal')}</div>
+      <section className="space-y-4 xl:col-span-9 2xl:col-span-13">
+        {trades.length === 0 && (
+          <div className="border border-zinc-800 bg-zinc-900/40 p-8 text-center">
+            <div className="text-amber-400 text-xs tracking-[0.3em] mb-3">{t('noTradesTitle')}</div>
+            <div className="text-zinc-300 mb-2">{t('noTradesBody')}</div>
+            <div className="text-zinc-500 text-sm mb-6">
+              {t('currentRiskPerTrade')}{' '}
+              <span className="text-amber-400">${fmt(config.initialCapital * config.riskPctPerTrade / 100, 2)}</span>.
+            </div>
+            <button onClick={() => setTab('markets')}
+              className="inline-flex items-center gap-2 bg-amber-500 hover:bg-amber-400 text-zinc-950 px-5 py-2.5 text-xs font-bold tracking-[0.2em]">
+              <Activity className="w-4 h-4" /> {t('exploreMarkets')}
+            </button>
           </div>
-          <div className="hidden sm:flex items-center gap-2 text-[10px] tabular text-zinc-500">
-            <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 pulse-soft" />
-            LIVE LOCAL
-          </div>
-        </div>
-        <div className="grid grid-cols-2 lg:grid-cols-4">
-          {dashboardMetrics.map(item => (
-            <TerminalMetric key={item.symbol} item={item} />
-          ))}
-        </div>
-      </div>
+        )}
 
-      {curve.length > 1 && (
-        <Panel title={t('equityCurve')} subtitle={t('equityCurveSub')}>
-          <div className="h-56 -mx-2">
-            <ResponsiveContainer width="100%" height="100%">
-              <AreaChart data={curve} margin={{ top: 10, right: 16, left: 0, bottom: 0 }}>
-                <defs>
-                  <linearGradient id="grad-eq" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="0%" stopColor="#f59e0b" stopOpacity={0.4} />
-                    <stop offset="100%" stopColor="#f59e0b" stopOpacity={0} />
-                  </linearGradient>
-                </defs>
-                <CartesianGrid stroke="#27272a" strokeDasharray="2 4" vertical={false} />
-                <XAxis dataKey="idx" tick={{ fill: '#52525b', fontSize: 10 }}
-                       axisLine={{ stroke: '#3f3f46' }} tickLine={false} />
-                <YAxis tick={{ fill: '#52525b', fontSize: 10 }}
-                       axisLine={{ stroke: '#3f3f46' }} tickLine={false}
-                       tickFormatter={(v) => `$${v}`} />
-                <Tooltip contentStyle={{ backgroundColor: '#18181b', border: '1px solid #3f3f46',
-                  borderRadius: 0, fontFamily: 'JetBrains Mono', fontSize: 11 }}
-                  labelStyle={{ color: '#a1a1aa' }} formatter={(v) => [fmtUsd(v), 'Capital']} />
-                <ReferenceLine y={config.initialCapital} stroke="#52525b" strokeDasharray="4 4" />
-                <ReferenceLine y={config.goalCapital} stroke="#10b981"
-                               strokeDasharray="4 4" strokeOpacity={0.5} />
-                <Area type="monotone" dataKey="capital" stroke="#f59e0b"
-                      strokeWidth={2} fill="url(#grad-eq)" />
-              </AreaChart>
-            </ResponsiveContainer>
+        {(overRisk || tooMany) && (
+          <div className="border border-red-500/40 bg-red-500/5 p-4 flex items-start gap-3">
+            <AlertTriangle className="w-5 h-5 text-red-400 flex-shrink-0 mt-0.5" />
+            <div>
+              <div className="text-red-400 text-xs tracking-wider mb-1">{t('guardrailViolated')}</div>
+              <ul className="text-sm text-zinc-300 space-y-1">
+                {overRisk && <li>{t('exposedRisk')} {fmt(openRiskPct, 1)}% &gt; {t('limit')} {config.maxPortfolioRiskPct}%</li>}
+                {tooMany && <li>{open.length} {t('openPositions')} - {t('max')} {config.maxOpenPositions}</li>}
+              </ul>
+            </div>
           </div>
-        </Panel>
-      )}
+        )}
 
-      {open.length > 0 && (
-        <Panel title={t('openPositionsPanel')} subtitle={`${open.length}/${config.maxOpenPositions}`}>
-          <div className="divide-y divide-zinc-800">
-            {open.map(t => (
-              <OpenTradeRow
-                key={t.id}
-                t={t}
-                onManage={(trade, currentPrice) => setManagedPosition({ trade, currentPrice })}
-              />
+        <TrainingCommandCenter
+          readinessScore={readinessScore}
+          readinessChecks={readinessChecks}
+          confidenceLevel={confidenceLevel}
+          mistakeTax={mistakeTax}
+          onPlanAvgR={onPlanAvgR}
+          offPlanAvgR={offPlanAvgR}
+          nextChallenge={nextChallenge}
+          riskRemainingToday={riskRemainingToday}
+          dailyRiskBudget={dailyRiskBudget}
+          setTab={setTab}
+          t={t}
+        />
+
+        <div className="border border-zinc-800 bg-black/40 shadow-[0_0_40px_rgba(245,158,11,0.06)]">
+          <div className="flex items-center justify-between border-b border-zinc-800 px-3 sm:px-4 py-2 bg-zinc-950/80">
+            <div className="flex items-center gap-2">
+              <LineIcon className="w-3.5 h-3.5 text-amber-400" />
+              <div className="text-[10px] tracking-[0.24em] text-zinc-400">{t('performanceTerminal')}</div>
+            </div>
+            <div className="hidden sm:flex items-center gap-2 text-[10px] tabular text-zinc-500">
+              <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 pulse-soft" />
+              LIVE LOCAL
+            </div>
+          </div>
+          <div className="grid grid-cols-2 2xl:grid-cols-4">
+            {dashboardMetrics.map(item => (
+              <TerminalMetric key={item.symbol} item={item} />
             ))}
           </div>
-        </Panel>
+        </div>
+
+      </section>
+
+      {(curve.length > 1 || open.length > 0 || closed.length > 0) && (
+        <section className="xl:col-span-12 2xl:col-span-16">
+          <div className="grid grid-cols-1 gap-4 xl:grid-cols-12">
+            {curve.length > 1 && (
+              <Panel title={t('equityCurve')} subtitle={t('equityCurveSub')} className="xl:col-span-3">
+                <div className="h-64 -mx-2">
+                  <ResponsiveContainer width="100%" height="100%">
+                    <AreaChart data={curve} margin={{ top: 10, right: 16, left: 0, bottom: 0 }}>
+                      <defs>
+                        <linearGradient id="grad-eq" x1="0" y1="0" x2="0" y2="1">
+                          <stop offset="0%" stopColor="#f59e0b" stopOpacity={0.4} />
+                          <stop offset="100%" stopColor="#f59e0b" stopOpacity={0} />
+                        </linearGradient>
+                      </defs>
+                      <CartesianGrid stroke="#27272a" strokeDasharray="2 4" vertical={false} />
+                      <XAxis dataKey="idx" tick={{ fill: '#52525b', fontSize: 10 }}
+                             axisLine={{ stroke: '#3f3f46' }} tickLine={false} />
+                      <YAxis tick={{ fill: '#52525b', fontSize: 10 }}
+                             axisLine={{ stroke: '#3f3f46' }} tickLine={false}
+                             tickFormatter={(v) => `$${v}`} />
+                      <Tooltip contentStyle={{ backgroundColor: '#18181b', border: '1px solid #3f3f46',
+                        borderRadius: 0, fontFamily: 'JetBrains Mono', fontSize: 11 }}
+                        labelStyle={{ color: '#a1a1aa' }} formatter={(v) => [fmtUsd(v), 'Capital']} />
+                      <ReferenceLine y={config.initialCapital} stroke="#52525b" strokeDasharray="4 4" />
+                      <ReferenceLine y={config.goalCapital} stroke="#10b981"
+                                     strokeDasharray="4 4" strokeOpacity={0.5} />
+                      <Area type="monotone" dataKey="capital" stroke="#f59e0b"
+                            strokeWidth={2} fill="url(#grad-eq)" />
+                    </AreaChart>
+                  </ResponsiveContainer>
+                </div>
+              </Panel>
+            )}
+
+            {open.length > 0 && (
+              <Panel title={t('openPositionsPanel')} subtitle={`${open.length}/${config.maxOpenPositions}`} className="xl:col-span-6">
+                <div className="max-h-80 divide-y divide-zinc-800 overflow-y-auto scrollbar-hidden">
+                  {open.map(t => (
+                    <OpenTradeRow
+                      key={t.id}
+                      t={t}
+                      onManage={(trade, currentPrice) => setManagedPosition({ trade, currentPrice })}
+                    />
+                  ))}
+                </div>
+              </Panel>
+            )}
+
+            {closed.length > 0 && (
+              <Panel title={t('lastClosedTrades')} className="xl:col-span-3">
+                <div className="max-h-80 divide-y divide-zinc-800 overflow-y-auto scrollbar-hidden">
+                  {[...closed].reverse().slice(0, 5).map(t => <ClosedTradeRow key={t.id} t={t} />)}
+                </div>
+              </Panel>
+            )}
+          </div>
+        </section>
       )}
 
-      {closed.length > 0 && (
-        <Panel title={t('lastClosedTrades')}>
-          <div className="divide-y divide-zinc-800">
-            {[...closed].reverse().slice(0, 5).map(t => <ClosedTradeRow key={t.id} t={t} />)}
-          </div>
-        </Panel>
-      )}
+      <section className="xl:col-span-12 2xl:col-span-16">
+        <PortfolioRiskDashboard dashboard={portfolioRiskDashboard} />
+      </section>
 
       <PositionManagementModal
         trade={managedPosition?.trade || null}
@@ -1600,9 +1612,9 @@ function Metric({ label, value, sub, accent = 'zinc' }) {
   );
 }
 
-function Panel({ title, subtitle, children, action }) {
+function Panel({ title, subtitle, children, action, className = "" }) {
   return (
-    <div className="border border-zinc-800 bg-zinc-900/40">
+    <div className={`border border-zinc-800 bg-zinc-900/40 ${className}`}>
       <div className="flex items-center justify-between px-4 py-3 border-b border-zinc-800">
         <div>
           <div className="text-[11px] tracking-[0.2em] text-zinc-300">{title}</div>
@@ -4729,7 +4741,7 @@ function Settings({ config, saveConfig, trades, saveTrades,
 function Footer({ status }) {
   return (
     <footer className="border-t border-zinc-800/80 mt-8">
-      <div className="max-w-6xl mx-auto px-4 sm:px-6 py-4 flex items-center justify-between">
+      <div className="mx-auto flex w-full max-w-[1800px] items-center justify-between px-4 py-4 sm:px-6 lg:px-8 2xl:px-10">
         <div className="text-[9px] tracking-[0.3em] text-zinc-600">
           // SISTEMA OPERANDO · NO ES ASESORÍA FINANCIERA
         </div>
