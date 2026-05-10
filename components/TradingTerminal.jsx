@@ -58,7 +58,18 @@ const ALL_PAIRS = [
   'TONUSDT', 'FILUSDT', 'AAVEUSDT', 'MKRUSDT', 'TIAUSDT'
 ];
 
-const TICKER_BAR_SYMBOLS = ['BTCUSDT', 'ETHUSDT', 'SOLUSDT'];
+const TICKER_BAR_SYMBOLS = [
+  'BTCUSDT', 'ETHUSDT', 'SOLUSDT', 'BNBUSDT', 'XRPUSDT',
+  'ADAUSDT', 'DOGEUSDT', 'AVAXUSDT', 'LINKUSDT', 'TRXUSDT',
+  'TONUSDT', 'DOTUSDT', 'LTCUSDT', 'BCHUSDT', 'UNIUSDT',
+  'NEARUSDT', 'APTUSDT', 'ICPUSDT', 'ETCUSDT', 'FILUSDT',
+  'ATOMUSDT', 'XLMUSDT', 'HBARUSDT', 'ARBUSDT', 'OPUSDT',
+  'VETUSDT', 'INJUSDT', 'SUIUSDT', 'POLUSDT', 'RENDERUSDT',
+  'AAVEUSDT', 'GRTUSDT', 'ALGOUSDT', 'MKRUSDT', 'QNTUSDT',
+  'EGLDUSDT', 'STXUSDT', 'RUNEUSDT', 'SANDUSDT', 'MANAUSDT',
+  'AXSUSDT', 'APEUSDT', 'GALAUSDT', 'CHZUSDT', 'DYDXUSDT',
+  'SNXUSDT', 'CRVUSDT', 'COMPUSDT', 'LDOUSDT', 'FETUSDT'
+];
 
 const EMOTIONS = [
   { id: 'calm',    label: 'CALMADO',  classes: 'border-emerald-500/40 text-emerald-400' },
@@ -767,11 +778,13 @@ export default function TradingTerminal() {
   return (
     <div className="min-h-screen bg-zinc-950 text-zinc-100">
       <div className="grid-bg min-h-screen">
-        <TickerBar tickers={tickerBarData} status={tickerStatus} t={t} />
-        <Header config={config} metrics={metrics} status={tickerStatus}
-                activeChallenge={activeChallenge} challengeEval={challengeEval}
-                language={language} setLanguage={changeLanguage} t={t} />
-        <TabNav tab={tab} setTab={setTab} activeChallenge={activeChallenge} t={t} />
+        <div className="sticky top-0 z-40 bg-zinc-950/95 shadow-[0_18px_40px_rgba(0,0,0,0.35)] backdrop-blur">
+          <TickerBar tickers={tickerBarData} status={tickerStatus} t={t} />
+          <Header config={config} metrics={metrics} status={tickerStatus}
+                  activeChallenge={activeChallenge} challengeEval={challengeEval}
+                  language={language} setLanguage={changeLanguage} t={t} />
+          <TabNav tab={tab} setTab={setTab} activeChallenge={activeChallenge} t={t} />
+        </div>
 
         <main className="mx-auto w-full max-w-[1800px] px-4 pb-24 pt-5 sm:px-6 lg:px-8 2xl:px-10">
           {tab === 'dashboard' && (
@@ -872,32 +885,46 @@ function TickerBar({ tickers, status, t }) {
   const items = TICKER_BAR_SYMBOLS.map(s => tickers[s]).filter(Boolean);
   if (!items.length) {
     return (
-      <div className="bg-zinc-900/80 border-b border-zinc-800">
-        <div className="mx-auto w-full max-w-[1800px] px-4 py-1.5 text-[10px] tracking-wider text-zinc-500 sm:px-6 lg:px-8 2xl:px-10">
+      <div className="relative overflow-hidden border-b border-zinc-800 bg-zinc-950/95">
+        <div className="mx-auto w-full max-w-[1800px] px-4 py-2 text-[10px] tracking-wider text-zinc-500 sm:px-6 lg:px-8 2xl:px-10">
           {t('connectingBinance')}
         </div>
       </div>
     );
   }
 
+  const tickerItems = items.map(ticker => ({
+    symbol: ticker.symbol,
+    label: ticker.symbol.replace('USDT', ''),
+    price: ticker.lastPrice,
+    change: ticker.priceChangePercent,
+  }));
+
   return (
-    <div className="bg-zinc-900/80 border-b border-zinc-800 overflow-hidden">
-      <div className="mx-auto flex w-full max-w-[1800px] items-center gap-3 px-4 py-1.5 text-[11px] tabular sm:px-6 lg:px-8 2xl:px-10">
-        <div className="flex min-w-0 flex-1 items-center gap-4 sm:gap-6 overflow-x-auto scrollbar-hidden">
-          {items.map(ticker => {
-            const change = parseFloat(ticker.priceChangePercent);
-            return (
-              <div key={ticker.symbol} className="flex items-center gap-2 whitespace-nowrap">
-                <span className="text-zinc-500">{ticker.symbol.replace('USDT', '')}</span>
-                <span className="text-zinc-200">${fmtPrice(ticker.lastPrice)}</span>
-                <span className={change >= 0 ? 'text-emerald-400' : 'text-red-400'}>
-                  {sign(change)}{fmt(change, 2)}%
+    <div className="relative overflow-hidden border-b border-zinc-800 bg-zinc-950/95 text-[11px] tabular text-zinc-500">
+      <div className="pointer-events-none absolute inset-y-0 left-0 z-10 w-16 bg-gradient-to-r from-zinc-950 to-zinc-950/0" />
+      <div className="pointer-events-none absolute inset-y-0 right-0 z-10 w-24 bg-gradient-to-l from-zinc-950 to-zinc-950/0" />
+
+      <div className="mx-auto flex min-h-9 w-full max-w-[1800px] items-center gap-4 px-4 sm:px-6 lg:px-8 2xl:px-10">
+        <div className="min-w-0 flex-1 overflow-hidden">
+          <div className="ticker-marquee flex min-w-max items-center gap-10 whitespace-nowrap">
+            {[...tickerItems, ...tickerItems].map((item, index) => {
+              const change = parseFloat(item.change);
+              const positive = change >= 0;
+              return (
+                <span key={`${item.symbol}-${index}`} className="flex items-center gap-2">
+                  <span className="font-semibold tracking-[0.05em] text-zinc-200">{item.label}</span>
+                  <span>${fmtPrice(item.price)}</span>
+                  <span className={positive ? 'text-emerald-400' : 'text-red-400'}>
+                    {positive ? '▲' : '▼'}{sign(change)}{fmt(change, 2)}%
+                  </span>
                 </span>
-              </div>
-            );
-          })}
+              );
+            })}
+          </div>
         </div>
-        <div className="flex flex-shrink-0 items-center gap-1.5 text-[10px] text-zinc-500">
+
+        <div className="relative z-20 flex flex-shrink-0 items-center gap-1.5 bg-zinc-950 pl-3 text-[10px] text-zinc-500">
           {status === 'live' && (
             <><Wifi className="w-3 h-3 text-emerald-400" /> <span className="text-emerald-400">LIVE</span></>
           )}
@@ -921,7 +948,7 @@ function Header({ config, metrics, activeChallenge, challengeEval, language, set
   const pct = Math.max(0, Math.min(100, progressPct));
 
   return (
-    <header className="border-b border-zinc-800/80 bg-zinc-950/95 backdrop-blur sticky top-0 z-30">
+    <header className="border-b border-zinc-800/80 bg-zinc-950/95">
       <div className="mx-auto w-full max-w-[1800px] px-4 py-4 sm:px-6 lg:px-8 2xl:px-10">
         <div className="flex items-center justify-between mb-3">
           <div className="flex items-center gap-2">
@@ -1022,7 +1049,7 @@ function TabNav({ tab, setTab, activeChallenge, t }) {
   ];
 
   return (
-    <nav className="border-b border-zinc-800/80 bg-zinc-950/90 sticky top-[145px] sm:top-[157px] z-20">
+    <nav className="border-b border-zinc-800/80 bg-zinc-950/90">
       <div className="mx-auto w-full max-w-[1800px] overflow-x-auto px-1 scrollbar-hidden sm:px-6 lg:px-8 2xl:px-10">
         <div className="flex min-w-max">
           {tabs.map(({ id, label, icon: Icon }) => {
