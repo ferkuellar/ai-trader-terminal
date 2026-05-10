@@ -92,9 +92,10 @@ export default function AssetChartSection({
         </div>
       </div>
 
-      {quickAnalysis}
-
-      <AssetLinksPanel profile={profile} />
+      <div className="grid items-stretch gap-4 xl:grid-cols-[minmax(0,1.35fr)_minmax(320px,0.85fr)]">
+        <div className="min-w-0">{quickAnalysis}</div>
+        <AssetLinksPanel profile={profile} />
+      </div>
 
       <div className="text-[10px] leading-relaxed text-zinc-600">
         Live chart is provided by TradingView for the selected Binance symbol. Price and 24h movement use Binance public market data.
