@@ -11,9 +11,7 @@ import { formatCurrencyCompact, formatPercent } from "@/lib/asset-formatters";
 import useLiveAssetDetail from "@/hooks/useLiveAssetDetail";
 import ChartTimeframeSelector from "./ChartTimeframeSelector";
 import DynamicPairChart from "./DynamicPairChart";
-import CommunitySentimentGraph from "./CommunitySentimentGraph";
 import AssetLinksPanel from "./AssetLinksPanel";
-import AssetMarketDetails from "./AssetMarketDetails";
 
 export default function AssetChartSection({
   selectedMarket,
@@ -28,8 +26,6 @@ export default function AssetChartSection({
   const symbol = symbolFromPair(pair);
   const {
     ticker,
-    marketDetails,
-    sentiment,
     status,
     error,
     lastUpdateAt,
@@ -98,15 +94,10 @@ export default function AssetChartSection({
 
       {quickAnalysis}
 
-      <div className="grid gap-4 lg:grid-cols-[minmax(0,1fr)_minmax(320px,0.85fr)]">
-        <CommunitySentimentGraph sentiment={sentiment} />
-        <AssetLinksPanel profile={profile} />
-      </div>
-
-      <AssetMarketDetails details={marketDetails} symbol={symbol} />
+      <AssetLinksPanel profile={profile} />
 
       <div className="text-[10px] leading-relaxed text-zinc-600">
-        Live chart is provided by TradingView for the selected Binance symbol. Price and volume details use Binance public market data. Market cap and FDV are calculated with live Binance price and the public supply profile because Binance does not publish supply fields in ticker streams. Sentiment uses a public Fear & Greed feed plus Binance momentum as a live proxy, not a trade signal.
+        Live chart is provided by TradingView for the selected Binance symbol. Price and 24h movement use Binance public market data.
       </div>
     </section>
   );

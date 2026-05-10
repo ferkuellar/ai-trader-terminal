@@ -1,21 +1,14 @@
 "use client";
 
 import { useEffect, useMemo, useRef, useState } from "react";
-import { getAssetProfile, normalizePair } from "@/lib/chart-data-adapter";
-import {
-  buildLiveMarketDetails,
-  buildMarketDerivedSentiment,
-  fetchLiveSentiment,
-  fetchLiveTicker,
-} from "@/lib/live-asset-adapter";
+import { normalizePair } from "@/lib/chart-data-adapter";
+import { fetchLiveTicker } from "@/lib/live-asset-adapter";
 
 const REFRESH_MS = 30000;
 
 export default function useLiveAssetDetail(pair, timeframe, marketData) {
   const normalizedPair = normalizePair(pair);
-  const profile = useMemo(() => getAssetProfile(normalizedPair), [normalizedPair]);
   const [ticker, setTicker] = useState(null);
-  const [sentiment, setSentiment] = useState(null);
   const [status, setStatus] = useState("connecting");
   const [error, setError] = useState(null);
   const [lastUpdateAt, setLastUpdateAt] = useState(null);
@@ -34,14 +27,10 @@ export default function useLiveAssetDetail(pair, timeframe, marketData) {
       try {
         setStatus((current) => current === "ready" ? "refreshing" : "connecting");
         const nextTicker = await fetchLiveTicker(normalizedPair);
-        const [nextSentiment] = await Promise.all([
-          fetchLiveSentiment(normalizedPair, nextTicker).catch(() => buildMarketDerivedSentiment(normalizedPair, nextTicker)),
-        ]);
         if (cancelled) return;
 
         tickerRef.current = nextTicker;
         setTicker(nextTicker);
-        setSentiment(nextSentiment);
         setLastUpdateAt(Date.now());
         setStatus("ready");
         setError(null);
@@ -60,7 +49,6 @@ export default function useLiveAssetDetail(pair, timeframe, marketData) {
 
         tickerRef.current = fallbackTicker;
         setTicker(fallbackTicker);
-        setSentiment(buildMarketDerivedSentiment(normalizedPair, fallbackTicker));
         setStatus("degraded");
         setError(nextError.message || "Unable to load live asset data");
       }
@@ -101,15 +89,9 @@ export default function useLiveAssetDetail(pair, timeframe, marketData) {
   }, [marketData?.price, marketData?.change24hPct, marketData?.high24h, marketData?.low24h, marketData?.volume24h, normalizedPair]);
 
   const liveTicker = useMemo(() => ticker || marketData || {}, [ticker, marketData]);
-  const marketDetails = useMemo(
-    () => buildLiveMarketDetails(normalizedPair, liveTicker, profile),
-    [normalizedPair, liveTicker, profile],
-  );
 
   return {
     ticker: liveTicker,
-    marketDetails,
-    sentiment: sentiment || buildMarketDerivedSentiment(normalizedPair, liveTicker),
     status,
     error,
     lastUpdateAt,
