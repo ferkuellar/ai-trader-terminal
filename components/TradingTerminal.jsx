@@ -1878,7 +1878,7 @@ function ChartView({ selectedSymbol, setSelectedSymbol, trades, watchlist, setTa
   );
 
   const quickAnalysis = data.length > 0 ? (
-    <Panel title="ANÁLISIS RÁPIDO" subtitle="Confluencia para tu setup">
+    <Panel title="ANÁLISIS RÁPIDO" subtitle="Confluencia para tu setup" className="h-full">
           <div className="p-4 space-y-2 text-sm">
             {(() => {
               const last = data[data.length - 1];

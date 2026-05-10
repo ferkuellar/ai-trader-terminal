@@ -30,12 +30,12 @@ export default function AssetLinksPanel({ profile }) {
   const wallets = profile?.wallets || [];
 
   return (
-    <section className="border border-zinc-800 bg-zinc-950/60">
+    <section className="flex h-full flex-col border border-zinc-800 bg-zinc-950/60">
       <div className="border-b border-zinc-800 px-4 py-3">
         <h3 className="text-[11px] tracking-[0.2em] text-zinc-300">PROJECT LINKS</h3>
         <p className="mt-1 text-[10px] text-zinc-500">Sample profile links · verify externally</p>
       </div>
-      <div className="grid gap-2 p-4 sm:grid-cols-2">
+      <div className="grid flex-1 content-start gap-2 p-4 sm:grid-cols-2">
         <LinkButton label="Website" url={profile?.website} />
         <LinkButton label="Whitepaper" url={profile?.whitepaper} />
         <LinkButton label="CertiK" url={profile?.certikRating?.url} />

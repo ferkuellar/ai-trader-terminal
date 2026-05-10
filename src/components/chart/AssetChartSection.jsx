@@ -93,7 +93,7 @@ export default function AssetChartSection({
       </div>
 
       <div className="grid items-stretch gap-4 xl:grid-cols-[minmax(0,1.35fr)_minmax(320px,0.85fr)]">
-        <div className="min-w-0">{quickAnalysis}</div>
+        <div className="min-w-0 [&>*]:h-full">{quickAnalysis}</div>
         <AssetLinksPanel profile={profile} />
       </div>
 
