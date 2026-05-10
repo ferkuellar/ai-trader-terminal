@@ -1,0 +1,117 @@
+"use client";
+
+import { useEffect, useMemo, useRef, useState } from "react";
+import { getAssetProfile, normalizePair } from "@/lib/chart-data-adapter";
+import {
+  buildLiveMarketDetails,
+  buildMarketDerivedSentiment,
+  fetchLiveSentiment,
+  fetchLiveTicker,
+} from "@/lib/live-asset-adapter";
+
+const REFRESH_MS = 30000;
+
+export default function useLiveAssetDetail(pair, timeframe, marketData) {
+  const normalizedPair = normalizePair(pair);
+  const profile = useMemo(() => getAssetProfile(normalizedPair), [normalizedPair]);
+  const [ticker, setTicker] = useState(null);
+  const [sentiment, setSentiment] = useState(null);
+  const [status, setStatus] = useState("connecting");
+  const [error, setError] = useState(null);
+  const [lastUpdateAt, setLastUpdateAt] = useState(null);
+  const fallbackMarketDataRef = useRef(marketData);
+  const tickerRef = useRef(null);
+
+  useEffect(() => {
+    fallbackMarketDataRef.current = marketData;
+  }, [marketData]);
+
+  useEffect(() => {
+    let cancelled = false;
+    let intervalId;
+
+    async function load() {
+      try {
+        setStatus((current) => current === "ready" ? "refreshing" : "connecting");
+        const nextTicker = await fetchLiveTicker(normalizedPair);
+        const [nextSentiment] = await Promise.all([
+          fetchLiveSentiment(normalizedPair, nextTicker).catch(() => buildMarketDerivedSentiment(normalizedPair, nextTicker)),
+        ]);
+        if (cancelled) return;
+
+        tickerRef.current = nextTicker;
+        setTicker(nextTicker);
+        setSentiment(nextSentiment);
+        setLastUpdateAt(Date.now());
+        setStatus("ready");
+        setError(null);
+      } catch (nextError) {
+        if (cancelled) return;
+        const fallbackMarketData = fallbackMarketDataRef.current;
+        const fallbackTicker = fallbackMarketData?.price ? {
+          pair: normalizedPair,
+          price: fallbackMarketData.price,
+          change24hPct: fallbackMarketData.change24hPct,
+          high24h: fallbackMarketData.high24h,
+          low24h: fallbackMarketData.low24h,
+          volume24h: fallbackMarketData.volume24h,
+          source: "Binance public ticker fallback",
+        } : tickerRef.current;
+
+        tickerRef.current = fallbackTicker;
+        setTicker(fallbackTicker);
+        setSentiment(buildMarketDerivedSentiment(normalizedPair, fallbackTicker));
+        setStatus("degraded");
+        setError(nextError.message || "Unable to load live asset data");
+      }
+    }
+
+    load();
+    intervalId = window.setInterval(load, REFRESH_MS);
+
+    return () => {
+      cancelled = true;
+      window.clearInterval(intervalId);
+    };
+  }, [normalizedPair, timeframe]);
+
+  useEffect(() => {
+    if (!marketData?.price) return;
+    setTicker((current) => ({
+      ...current,
+      pair: normalizedPair,
+      price: marketData.price,
+      change24hPct: marketData.change24hPct ?? current?.change24hPct,
+      high24h: marketData.high24h ?? current?.high24h,
+      low24h: marketData.low24h ?? current?.low24h,
+      volume24h: marketData.volume24h ?? current?.volume24h,
+      source: "Binance public live ticker",
+    }));
+    tickerRef.current = {
+      ...tickerRef.current,
+      pair: normalizedPair,
+      price: marketData.price,
+      change24hPct: marketData.change24hPct ?? tickerRef.current?.change24hPct,
+      high24h: marketData.high24h ?? tickerRef.current?.high24h,
+      low24h: marketData.low24h ?? tickerRef.current?.low24h,
+      volume24h: marketData.volume24h ?? tickerRef.current?.volume24h,
+      source: "Binance public live ticker",
+    };
+    setLastUpdateAt(Date.now());
+  }, [marketData?.price, marketData?.change24hPct, marketData?.high24h, marketData?.low24h, marketData?.volume24h, normalizedPair]);
+
+  const liveTicker = useMemo(() => ticker || marketData || {}, [ticker, marketData]);
+  const marketDetails = useMemo(
+    () => buildLiveMarketDetails(normalizedPair, liveTicker, profile),
+    [normalizedPair, liveTicker, profile],
+  );
+
+  return {
+    ticker: liveTicker,
+    marketDetails,
+    sentiment: sentiment || buildMarketDerivedSentiment(normalizedPair, liveTicker),
+    status,
+    error,
+    lastUpdateAt,
+  };
+}

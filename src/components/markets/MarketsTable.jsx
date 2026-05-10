@@ -35,7 +35,7 @@ function rowFlashClass(row) {
   return "";
 }
 
-export default function MarketsTable({ rows = [], onSelectSymbol }) {
+export default function MarketsTable({ rows = [], selectedPair, onSelectSymbol }) {
   if (!rows.length) {
     return (
       <div className="border border-zinc-800 bg-zinc-950/60 p-8 text-center text-sm text-zinc-500">
@@ -66,7 +66,9 @@ export default function MarketsTable({ rows = [], onSelectSymbol }) {
             <tr
               key={row.pair}
               onClick={() => onSelectSymbol?.(row.pair)}
-              className={`cursor-pointer transition-colors duration-300 hover:bg-zinc-900/60 ${rowFlashClass(row)}`}
+              className={`cursor-pointer transition-colors duration-300 hover:bg-zinc-900/60 ${
+                selectedPair === row.pair ? "bg-cyan-500/10 shadow-[inset_2px_0_0_rgba(34,211,238,0.75)]" : ""
+              } ${rowFlashClass(row)}`}
             >
               <td className="px-4 py-3 text-right text-xs tabular text-zinc-500">{row.rank}</td>
               <td className="px-4 py-3">
