@@ -7,6 +7,7 @@ import AnalystView from "@/components/analyst/AnalystView";
 import ExecutiveCryptoDashboard from "@/components/dashboard/ExecutiveCryptoDashboard";
 import PortfolioRiskDashboard from "@/components/risk/PortfolioRiskDashboard";
 import RiskValidationPanel from "@/components/risk/RiskValidationPanel";
+import AssetChartSection from "../src/components/chart/AssetChartSection";
 import MarketsSection from "../src/components/markets/MarketsSection";
 import TradeHealthBar from "../src/components/TradeHealthBar";
 import PositionManagementModal from "../src/components/PositionManagementModal";
@@ -786,6 +787,7 @@ export default function TradingTerminal() {
           )}
           {tab === 'markets' && (
             <Markets watchlist={watchlist} saveWatchlist={saveWatchlist}
+                     selectedSymbol={selectedSymbol}
                      setSelectedSymbol={setSelectedSymbol} setTab={setTab} />
           )}
           {tab === 'chart' && (
@@ -1783,14 +1785,14 @@ function ClosedTradeRow({ t }) {
 // ═══════════════════════════════════════════════════════════════════════════
 // MARKETS — Live prices grid
 // ═══════════════════════════════════════════════════════════════════════════
-function Markets({ watchlist, setSelectedSymbol, setTab }) {
+function Markets({ watchlist, selectedSymbol, setSelectedSymbol, setTab }) {
   const onClickSymbol = (symbol) => {
     setSelectedSymbol(symbol);
     setTab('chart');
   };
 
   return (
-    <MarketsSection symbols={watchlist} onSelectSymbol={onClickSymbol} />
+    <MarketsSection symbols={watchlist} selectedPair={selectedSymbol} onSelectSymbol={onClickSymbol} />
   );
 }
 
@@ -1798,21 +1800,17 @@ function Markets({ watchlist, setSelectedSymbol, setTab }) {
 // CHART VIEW — Klines + EMAs
 // ═══════════════════════════════════════════════════════════════════════════
 function ChartView({ selectedSymbol, setSelectedSymbol, trades, watchlist, setTab }) {
-  const [interval, setInterval] = useState('1d');
   const [symbolSearch, setSymbolSearch] = useState('');
   const [showSymbolPicker, setShowSymbolPicker] = useState(false);
   const pickerRef = useRef(null);
   const { symbols: availableSymbols, status: symbolsStatus } = useBinanceSpotSymbols();
-  const { data, loading, error } = useKlines(selectedSymbol, interval, 200);
+  const { data } = useKlines(selectedSymbol, '1d', 200);
   const { tickers } = useLiveTickers([selectedSymbol], 1000);
 
   const ticker = tickers[selectedSymbol];
   const change = ticker ? parseFloat(ticker.priceChangePercent) : 0;
   const lastPrice = ticker ? parseFloat(ticker.lastPrice) : (data.length ? data[data.length - 1].close : 0);
 
-  // Trades on this symbol for overlay
-  const symbolTrades = trades.filter(t => pairToSymbol(t.pair) === selectedSymbol);
-  const openTrade = symbolTrades.find(t => t.status === 'open');
   const normalizedSearch = symbolSearch.toUpperCase().replace('/', '').replace(/\s+/g, '');
   const chartSymbols = useMemo(() => {
     const merged = [...new Set([...watchlist, ...availableSymbols])];
@@ -1843,97 +1841,44 @@ function ChartView({ selectedSymbol, setSelectedSymbol, trades, watchlist, setTa
     setShowSymbolPicker(false);
   };
 
-  return (
-    <div className="space-y-4">
-      <div className="flex items-center justify-between gap-3 flex-wrap">
-        <div className="flex items-center gap-2">
-          <div ref={pickerRef} className="relative">
-            <button onClick={() => setShowSymbolPicker(v => !v)}
-              className="min-w-44 bg-zinc-950 border border-zinc-800 px-3 py-2 text-left text-sm tabular focus:outline-none hover:border-amber-500/50 flex items-center justify-between gap-3">
-              <span>{selectedSymbol}</span>
-              <ChevronDown className="w-3.5 h-3.5 text-zinc-500" />
-            </button>
-            {showSymbolPicker && (
-              <div className="absolute left-0 top-full z-40 mt-2 w-80 border border-zinc-800 bg-zinc-950 shadow-2xl">
-                <div className="p-3 border-b border-zinc-800">
-                  <input autoFocus value={symbolSearch} onChange={e => setSymbolSearch(e.target.value)}
-                    placeholder="Buscar: BTC, PEPE, WIF, SOLUSDT..."
-                    className="w-full bg-zinc-900 border border-zinc-800 px-3 py-2 text-xs tabular focus:outline-none focus:border-amber-500/50" />
-                  <div className="mt-2 text-[10px] text-zinc-600">
-                    {symbolsStatus === 'live' ? `${availableSymbols.length} pares Binance` : 'catálogo local / cargando Binance'}
-                  </div>
-                </div>
-                <div className="max-h-72 overflow-y-auto scrollbar-hidden">
-                  {chartSymbols.map(s => (
-                    <button key={s} onClick={() => selectChartSymbol(s)}
-                      className={`w-full px-3 py-2 text-left text-xs tabular border-b border-zinc-900 hover:bg-zinc-900/80 ${
-                        s === selectedSymbol ? 'text-amber-400 bg-amber-500/5' : 'text-zinc-300'
-                      }`}>
-                      <span>{symbolToPair(s)}</span>
-                      {watchlist.includes(s) && <span className="ml-2 text-[9px] text-cyan-400">WATCH</span>}
-                    </button>
-                  ))}
-                  {chartSymbols.length === 0 && (
-                    <div className="px-3 py-6 text-center text-xs text-zinc-500">// sin resultados</div>
-                  )}
-                </div>
-              </div>
+  const symbolPicker = (
+    <div ref={pickerRef} className="relative">
+      <button onClick={() => setShowSymbolPicker(v => !v)}
+        className="min-w-44 bg-zinc-950 border border-zinc-800 px-3 py-2 text-left text-sm tabular focus:outline-none hover:border-cyan-500/50 flex items-center justify-between gap-3">
+        <span>{selectedSymbol}</span>
+        <ChevronDown className="w-3.5 h-3.5 text-zinc-500" />
+      </button>
+      {showSymbolPicker && (
+        <div className="absolute left-0 top-full z-40 mt-2 w-80 border border-zinc-800 bg-zinc-950 shadow-2xl">
+          <div className="p-3 border-b border-zinc-800">
+            <input autoFocus value={symbolSearch} onChange={e => setSymbolSearch(e.target.value)}
+              placeholder="Buscar: BTC, PEPE, WIF, SOLUSDT..."
+              className="w-full bg-zinc-900 border border-zinc-800 px-3 py-2 text-xs tabular focus:outline-none focus:border-cyan-500/50" />
+            <div className="mt-2 text-[10px] text-zinc-600">
+              {symbolsStatus === 'live' ? `${availableSymbols.length} pares Binance` : 'catálogo local / cargando Binance'}
+            </div>
+          </div>
+          <div className="max-h-72 overflow-y-auto scrollbar-hidden">
+            {chartSymbols.map(s => (
+              <button key={s} onClick={() => selectChartSymbol(s)}
+                className={`w-full px-3 py-2 text-left text-xs tabular border-b border-zinc-900 hover:bg-zinc-900/80 ${
+                  s === selectedSymbol ? 'text-cyan-300 bg-cyan-500/5' : 'text-zinc-300'
+                }`}>
+                <span>{symbolToPair(s)}</span>
+                {watchlist.includes(s) && <span className="ml-2 text-[9px] text-cyan-400">WATCH</span>}
+              </button>
+            ))}
+            {chartSymbols.length === 0 && (
+              <div className="px-3 py-6 text-center text-xs text-zinc-500">// sin resultados</div>
             )}
           </div>
-          {ticker && (
-            <div className="flex items-baseline gap-2">
-              <span className="text-xl tabular text-zinc-100">${fmtPrice(lastPrice)}</span>
-              <span className={`text-sm tabular ${change >= 0 ? 'text-emerald-400' : 'text-red-400'}`}>
-                {sign(change)}{fmt(change, 2)}%
-              </span>
-            </div>
-          )}
-        </div>
-        <div className="flex gap-1 items-center">
-          {INTERVALS.map(i => (
-            <button key={i.id} onClick={() => setInterval(i.id)}
-              className={`px-3 py-1.5 text-[10px] tracking-[0.2em] border transition-colors ${
-                interval === i.id
-                  ? 'border-amber-500/60 text-amber-400 bg-amber-500/5'
-                  : 'border-zinc-800 text-zinc-500 hover:text-zinc-300'
-              }`}>{i.label}</button>
-          ))}
-          {setTab && (
-            <button onClick={() => setTab('analyst')}
-              className="ml-2 px-3 py-1.5 text-[10px] tracking-[0.2em] border border-cyan-500/40 text-cyan-400 hover:bg-cyan-500/10 inline-flex items-center gap-1.5">
-              <Brain className="w-3 h-3" /> ANALIZAR
-            </button>
-          )}
-        </div>
-      </div>
-
-      <Panel title={`${symbolToPair(selectedSymbol)} · ${interval.toUpperCase()}`}
-             subtitle="Candlesticks + EMA50 + EMA200 · refresco 1s">
-        <div className="h-80 sm:h-[460px] -mx-2">
-          {loading ? (
-            <div className="flex items-center justify-center h-full">
-              <div className="text-amber-400 text-xs tracking-[0.3em] animate-pulse">// CARGANDO...</div>
-            </div>
-          ) : error ? (
-            <div className="flex items-center justify-center h-full text-red-400 text-xs">// ERROR: {error}</div>
-          ) : (
-            <CandlestickChart data={data} livePrice={lastPrice} openTrade={openTrade} />
-          )}
-        </div>
-      </Panel>
-
-      {ticker && (
-        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-          <Metric label="HIGH 24H" value={`$${fmtPrice(ticker.highPrice)}`} />
-          <Metric label="LOW 24H"  value={`$${fmtPrice(ticker.lowPrice)}`} />
-          <Metric label="VOL 24H"  value={`$${fmtVolume(ticker.quoteVolume)}`} />
-          <Metric label="TRADES 24H" value={fmt(parseInt(ticker.count), 0)} />
         </div>
       )}
+    </div>
+  );
 
-      {/* Quick analysis */}
-      {data.length > 0 && (
-        <Panel title="ANÁLISIS RÁPIDO" subtitle="Confluencia para tu setup">
+  const quickAnalysis = data.length > 0 ? (
+    <Panel title="ANÁLISIS RÁPIDO" subtitle="Confluencia para tu setup" className="h-full">
           <div className="p-4 space-y-2 text-sm">
             {(() => {
               const last = data[data.length - 1];
@@ -1960,8 +1905,22 @@ function ChartView({ selectedSymbol, setSelectedSymbol, trades, watchlist, setTa
             })()}
           </div>
         </Panel>
-      )}
-    </div>
+  ) : null;
+
+  return (
+    <AssetChartSection
+      selectedMarket={{ pair: selectedSymbol, symbol: pairToSymbol(selectedSymbol).replace('USDT', '') }}
+      marketData={{
+        price: lastPrice,
+        change24hPct: change,
+        high24h: ticker ? Number(ticker.highPrice) : null,
+        low24h: ticker ? Number(ticker.lowPrice) : null,
+        volume24h: ticker ? Number(ticker.quoteVolume) : null,
+      }}
+      symbolPicker={symbolPicker}
+      onAnalyze={setTab ? () => setTab('analyst') : null}
+      quickAnalysis={quickAnalysis}
+    />
   );
 }
 

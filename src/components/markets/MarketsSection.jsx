@@ -19,7 +19,7 @@ const DEFAULT_MARKET_SYMBOLS = [
   "LTCUSDT",
 ];
 
-export default function MarketsSection({ symbols = DEFAULT_MARKET_SYMBOLS, onSelectSymbol }) {
+export default function MarketsSection({ symbols = DEFAULT_MARKET_SYMBOLS, selectedPair, onSelectSymbol }) {
   const normalizedSymbols = useMemo(
     () => [...new Set((symbols.length ? symbols : DEFAULT_MARKET_SYMBOLS).slice(0, 12))],
     [symbols]
@@ -118,7 +118,7 @@ export default function MarketsSection({ symbols = DEFAULT_MARKET_SYMBOLS, onSel
       )}
 
       {status === "live" && (
-        <MarketsTable rows={markets} onSelectSymbol={onSelectSymbol} />
+        <MarketsTable rows={markets} selectedPair={selectedPair} onSelectSymbol={onSelectSymbol} />
       )}
     </section>
   );
