@@ -165,7 +165,7 @@ export default function PortfolioRiskDashboard({ dashboard }) {
       </div>
 
       <div className="space-y-4 p-4">
-        <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-10">
+        <div className="grid gap-3 sm:grid-cols-2">
           <SummaryCard
             label="OPEN RISK"
             value={money(summary.totalOpenRiskAmount)}
@@ -264,7 +264,7 @@ export default function PortfolioRiskDashboard({ dashboard }) {
           </div>
         </div>
 
-        <div className="grid gap-3 lg:grid-cols-[minmax(0,1.45fr)_minmax(320px,0.9fr)]">
+        <div className="grid gap-3">
           <div className="border border-zinc-800 bg-zinc-950/50">
             <div className="flex items-center gap-2 border-b border-zinc-800 px-3 py-2">
               <BarChart3 className="h-3.5 w-3.5 text-cyan-400" />

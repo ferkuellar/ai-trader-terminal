@@ -4,9 +4,10 @@ import { useState, useEffect, useMemo, useRef } from "react";
 import Papa from "papaparse";
 import { localApiStorage } from "@/lib/storage-client";
 import AnalystView from "@/components/analyst/AnalystView";
-import ExecutiveCryptoDashboard from "@/components/dashboard/ExecutiveCryptoDashboard";
 import PortfolioRiskDashboard from "@/components/risk/PortfolioRiskDashboard";
 import RiskValidationPanel from "@/components/risk/RiskValidationPanel";
+import { TerminalShell } from "@/components/layout/TerminalShell";
+import { TerminalPanel } from "@/components/layout/TerminalPanel";
 import AssetChartSection from "../src/components/chart/AssetChartSection";
 import MarketsSection from "../src/components/markets/MarketsSection";
 import TradeHealthBar from "../src/components/TradeHealthBar";
@@ -783,7 +784,7 @@ export default function TradingTerminal() {
                        saveJournal={saveJournal}
                        setTab={setTab} activeChallenge={activeChallenge}
                        challengeEval={challengeEval} achievements={achievements}
-                       analyses={analyses} watchlist={watchlist} t={t} />
+                       t={t} />
           )}
           {tab === 'markets' && (
             <Markets watchlist={watchlist} saveWatchlist={saveWatchlist}
@@ -1063,8 +1064,6 @@ function Dashboard({
   activeChallenge,
   challengeEval,
   achievements,
-  analyses,
-  watchlist,
   t,
 }) {
   const [managedPosition, setManagedPosition] = useState(null);
@@ -1208,195 +1207,179 @@ function Dashboard({
     },
   ];
 
-  return (
-    <div className="grid w-full grid-cols-1 gap-4 xl:grid-cols-12 2xl:grid-cols-16">
-      <aside className="flex h-full min-h-0 flex-col gap-4 xl:col-span-3 2xl:col-span-3">
-        {activeChallenge && challengeEval && (
-          <button onClick={() => setTab('challenges')}
-            className="w-full text-left border border-amber-500/30 bg-amber-500/5 hover:bg-amber-500/10 p-4 transition-colors">
-            <div className="flex items-center justify-between gap-3 mb-2">
-              <div className="flex min-w-0 items-center gap-2">
-                <Trophy className="w-4 h-4 flex-shrink-0 text-amber-400" />
-                <div className="text-[11px] tracking-[0.2em] text-amber-400">{t('activeChallenge')}</div>
-              </div>
-              <ChevronRight className="w-4 h-4 flex-shrink-0 text-zinc-500" />
-            </div>
-            <div className="mb-3 truncate text-sm text-zinc-100">{activeChallenge.name}</div>
-            <div className="grid grid-cols-3 gap-3 text-xs">
-              <div>
-                <div className="text-zinc-500 text-[10px]">{t('progress')}</div>
-                <div className="tabular text-zinc-200">{fmt(challengeEval.progressPct, 1)}%</div>
-              </div>
-              <div>
-                <div className="text-zinc-500 text-[10px]">{t('dailyDd')}</div>
-                <div className={`tabular ${
-                  challengeEval.dailyDDUsedPct > 80 ? 'text-red-400'
-                  : challengeEval.dailyDDUsedPct > 50 ? 'text-amber-400' : 'text-zinc-200'
-                }`}>{fmt(challengeEval.dailyDDUsedPct, 0)}% {t('used')}</div>
-              </div>
-              <div>
-                <div className="text-zinc-500 text-[10px]">{t('totalDd')}</div>
-                <div className={`tabular ${
-                  challengeEval.totalDDUsedPct > 80 ? 'text-red-400'
-                  : challengeEval.totalDDUsedPct > 50 ? 'text-amber-400' : 'text-zinc-200'
-                }`}>{fmt(challengeEval.totalDDUsedPct, 0)}% {t('used')}</div>
-              </div>
-            </div>
+  const mainWorkspace = (
+    <>
+      {trades.length === 0 && (
+        <div className="border border-zinc-800 bg-zinc-900/40 p-8 text-center">
+          <div className="text-amber-400 text-xs tracking-[0.3em] mb-3">{t('noTradesTitle')}</div>
+          <div className="text-zinc-300 mb-2">{t('noTradesBody')}</div>
+          <div className="text-zinc-500 text-sm mb-6">
+            {t('currentRiskPerTrade')}{' '}
+            <span className="text-amber-400">${fmt(config.initialCapital * config.riskPctPerTrade / 100, 2)}</span>.
+          </div>
+          <button onClick={() => setTab('markets')}
+            className="inline-flex items-center gap-2 bg-amber-500 hover:bg-amber-400 text-zinc-950 px-5 py-2.5 text-xs font-bold tracking-[0.2em]">
+            <Activity className="w-4 h-4" /> {t('exploreMarkets')}
           </button>
-        )}
+        </div>
+      )}
 
-        {achievements && achievements.length > 0 && (
-          <div className="border border-zinc-800 bg-zinc-900/40 px-4 py-3">
-            <div className="flex items-center gap-2 mb-2">
-              <Medal className="w-3.5 h-3.5 text-amber-400" />
-              <div className="text-[10px] tracking-[0.2em] text-zinc-500">{t('achievements')} · {achievements.length}/{ACHIEVEMENTS.length}</div>
-            </div>
-            <div className="flex gap-2 overflow-x-auto scrollbar-hidden">
-              {achievements.slice(-6).reverse().map(a => (
-                <div key={a.id}
-                  title={a.desc}
-                  className="flex-shrink-0 border border-amber-500/30 bg-amber-500/5 px-2.5 py-1 text-[10px] text-amber-400 whitespace-nowrap">
-                  <Medal className="w-2.5 h-2.5 inline mr-1" />
-                  {a.name}
-                </div>
-              ))}
-            </div>
+      {(overRisk || tooMany) && (
+        <div className="border border-red-500/40 bg-red-500/5 p-4 flex items-start gap-3">
+          <AlertTriangle className="w-5 h-5 text-red-400 flex-shrink-0 mt-0.5" />
+          <div>
+            <div className="text-red-400 text-xs tracking-wider mb-1">{t('guardrailViolated')}</div>
+            <ul className="text-sm text-zinc-300 space-y-1">
+              {overRisk && <li>{t('exposedRisk')} {fmt(openRiskPct, 1)}% &gt; {t('limit')} {config.maxPortfolioRiskPct}%</li>}
+              {tooMany && <li>{open.length} {t('openPositions')} - {t('max')} {config.maxOpenPositions}</li>}
+            </ul>
           </div>
-        )}
+        </div>
+      )}
 
-        <ExecutiveCryptoDashboard
-          analyses={analyses}
-          watchlist={watchlist}
-          setTab={setTab}
-          className="flex-1"
-        />
-      </aside>
+      <TrainingCommandCenter
+        readinessScore={readinessScore}
+        readinessChecks={readinessChecks}
+        confidenceLevel={confidenceLevel}
+        mistakeTax={mistakeTax}
+        onPlanAvgR={onPlanAvgR}
+        offPlanAvgR={offPlanAvgR}
+        nextChallenge={nextChallenge}
+        riskRemainingToday={riskRemainingToday}
+        dailyRiskBudget={dailyRiskBudget}
+        setTab={setTab}
+        t={t}
+      />
 
-      <section className="space-y-4 xl:col-span-9 2xl:col-span-13">
-        {trades.length === 0 && (
-          <div className="border border-zinc-800 bg-zinc-900/40 p-8 text-center">
-            <div className="text-amber-400 text-xs tracking-[0.3em] mb-3">{t('noTradesTitle')}</div>
-            <div className="text-zinc-300 mb-2">{t('noTradesBody')}</div>
-            <div className="text-zinc-500 text-sm mb-6">
-              {t('currentRiskPerTrade')}{' '}
-              <span className="text-amber-400">${fmt(config.initialCapital * config.riskPctPerTrade / 100, 2)}</span>.
-            </div>
-            <button onClick={() => setTab('markets')}
-              className="inline-flex items-center gap-2 bg-amber-500 hover:bg-amber-400 text-zinc-950 px-5 py-2.5 text-xs font-bold tracking-[0.2em]">
-              <Activity className="w-4 h-4" /> {t('exploreMarkets')}
-            </button>
+      <div className="border border-zinc-800 bg-black/40 shadow-[0_0_40px_rgba(245,158,11,0.06)]">
+        <div className="flex items-center justify-between border-b border-zinc-800 px-3 sm:px-4 py-2 bg-zinc-950/80">
+          <div className="flex items-center gap-2">
+            <LineIcon className="w-3.5 h-3.5 text-amber-400" />
+            <div className="text-[10px] tracking-[0.24em] text-zinc-400">{t('performanceTerminal')}</div>
           </div>
-        )}
-
-        {(overRisk || tooMany) && (
-          <div className="border border-red-500/40 bg-red-500/5 p-4 flex items-start gap-3">
-            <AlertTriangle className="w-5 h-5 text-red-400 flex-shrink-0 mt-0.5" />
-            <div>
-              <div className="text-red-400 text-xs tracking-wider mb-1">{t('guardrailViolated')}</div>
-              <ul className="text-sm text-zinc-300 space-y-1">
-                {overRisk && <li>{t('exposedRisk')} {fmt(openRiskPct, 1)}% &gt; {t('limit')} {config.maxPortfolioRiskPct}%</li>}
-                {tooMany && <li>{open.length} {t('openPositions')} - {t('max')} {config.maxOpenPositions}</li>}
-              </ul>
-            </div>
+          <div className="hidden sm:flex items-center gap-2 text-[10px] tabular text-zinc-500">
+            <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 pulse-soft" />
+            LIVE LOCAL
           </div>
-        )}
+        </div>
+        <div className="grid grid-cols-2 2xl:grid-cols-4">
+          {dashboardMetrics.map(item => (
+            <TerminalMetric key={item.symbol} item={item} />
+          ))}
+        </div>
+      </div>
 
-        <TrainingCommandCenter
-          readinessScore={readinessScore}
-          readinessChecks={readinessChecks}
-          confidenceLevel={confidenceLevel}
-          mistakeTax={mistakeTax}
-          onPlanAvgR={onPlanAvgR}
-          offPlanAvgR={offPlanAvgR}
-          nextChallenge={nextChallenge}
-          riskRemainingToday={riskRemainingToday}
-          dailyRiskBudget={dailyRiskBudget}
-          setTab={setTab}
-          t={t}
-        />
-
-        <div className="border border-zinc-800 bg-black/40 shadow-[0_0_40px_rgba(245,158,11,0.06)]">
-          <div className="flex items-center justify-between border-b border-zinc-800 px-3 sm:px-4 py-2 bg-zinc-950/80">
-            <div className="flex items-center gap-2">
-              <LineIcon className="w-3.5 h-3.5 text-amber-400" />
-              <div className="text-[10px] tracking-[0.24em] text-zinc-400">{t('performanceTerminal')}</div>
-            </div>
-            <div className="hidden sm:flex items-center gap-2 text-[10px] tabular text-zinc-500">
-              <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 pulse-soft" />
-              LIVE LOCAL
-            </div>
+      {achievements && achievements.length > 0 && (
+        <div className="border border-zinc-800 bg-zinc-900/40 px-4 py-3">
+          <div className="flex items-center gap-2 mb-2">
+            <Medal className="w-3.5 h-3.5 text-amber-400" />
+            <div className="text-[10px] tracking-[0.2em] text-zinc-500">{t('achievements')} · {achievements.length}/{ACHIEVEMENTS.length}</div>
           </div>
-          <div className="grid grid-cols-2 2xl:grid-cols-4">
-            {dashboardMetrics.map(item => (
-              <TerminalMetric key={item.symbol} item={item} />
+          <div className="flex gap-2 overflow-x-auto scrollbar-hidden">
+            {achievements.slice(-6).reverse().map(a => (
+              <div key={a.id}
+                title={a.desc}
+                className="flex-shrink-0 border border-amber-500/30 bg-amber-500/5 px-2.5 py-1 text-[10px] text-amber-400 whitespace-nowrap">
+                <Medal className="w-2.5 h-2.5 inline mr-1" />
+                {a.name}
+              </div>
             ))}
           </div>
         </div>
+      )}
+    </>
+  );
 
-      </section>
+  const rightRail = (
+    <>
+      <PortfolioRiskDashboard dashboard={portfolioRiskDashboard} />
 
-      {(curve.length > 1 || open.length > 0 || closed.length > 0) && (
-        <section className="xl:col-span-12 2xl:col-span-16">
-          <div className="grid grid-cols-1 gap-4 xl:grid-cols-12">
-            {curve.length > 1 && (
-              <Panel title={t('equityCurve')} subtitle={t('equityCurveSub')} className="xl:col-span-3">
-                <div className="h-64 -mx-2">
-                  <ResponsiveContainer width="100%" height="100%">
-                    <AreaChart data={curve} margin={{ top: 10, right: 16, left: 0, bottom: 0 }}>
-                      <defs>
-                        <linearGradient id="grad-eq" x1="0" y1="0" x2="0" y2="1">
-                          <stop offset="0%" stopColor="#f59e0b" stopOpacity={0.4} />
-                          <stop offset="100%" stopColor="#f59e0b" stopOpacity={0} />
-                        </linearGradient>
-                      </defs>
-                      <CartesianGrid stroke="#27272a" strokeDasharray="2 4" vertical={false} />
-                      <XAxis dataKey="idx" tick={{ fill: '#52525b', fontSize: 10 }}
-                             axisLine={{ stroke: '#3f3f46' }} tickLine={false} />
-                      <YAxis tick={{ fill: '#52525b', fontSize: 10 }}
-                             axisLine={{ stroke: '#3f3f46' }} tickLine={false}
-                             tickFormatter={(v) => `$${v}`} />
-                      <Tooltip contentStyle={{ backgroundColor: '#18181b', border: '1px solid #3f3f46',
-                        borderRadius: 0, fontFamily: 'JetBrains Mono', fontSize: 11 }}
-                        labelStyle={{ color: '#a1a1aa' }} formatter={(v) => [fmtUsd(v), 'Capital']} />
-                      <ReferenceLine y={config.initialCapital} stroke="#52525b" strokeDasharray="4 4" />
-                      <ReferenceLine y={config.goalCapital} stroke="#10b981"
-                                     strokeDasharray="4 4" strokeOpacity={0.5} />
-                      <Area type="monotone" dataKey="capital" stroke="#f59e0b"
-                            strokeWidth={2} fill="url(#grad-eq)" />
-                    </AreaChart>
-                  </ResponsiveContainer>
-                </div>
-              </Panel>
-            )}
-
-            {open.length > 0 && (
-              <Panel title={t('openPositionsPanel')} subtitle={`${open.length}/${config.maxOpenPositions}`} className="xl:col-span-6">
-                <div className="max-h-80 divide-y divide-zinc-800 overflow-y-auto scrollbar-hidden">
-                  {open.map(t => (
-                    <OpenTradeRow
-                      key={t.id}
-                      t={t}
-                      onManage={(trade, currentPrice) => setManagedPosition({ trade, currentPrice })}
-                    />
-                  ))}
-                </div>
-              </Panel>
-            )}
-
-            {closed.length > 0 && (
-              <Panel title={t('lastClosedTrades')} className="xl:col-span-3">
-                <div className="max-h-80 divide-y divide-zinc-800 overflow-y-auto scrollbar-hidden">
-                  {[...closed].reverse().slice(0, 5).map(t => <ClosedTradeRow key={t.id} t={t} />)}
-                </div>
-              </Panel>
-            )}
+      {activeChallenge && challengeEval && (
+        <button onClick={() => setTab('challenges')}
+          className="w-full text-left border border-amber-500/30 bg-amber-500/5 hover:bg-amber-500/10 p-4 transition-colors">
+          <div className="flex items-center justify-between gap-3 mb-2">
+            <div className="flex min-w-0 items-center gap-2">
+              <Trophy className="w-4 h-4 flex-shrink-0 text-amber-400" />
+              <div className="text-[11px] tracking-[0.2em] text-amber-400">{t('activeChallenge')}</div>
+            </div>
+            <ChevronRight className="w-4 h-4 flex-shrink-0 text-zinc-500" />
           </div>
-        </section>
+          <div className="mb-3 truncate text-sm text-zinc-100">{activeChallenge.name}</div>
+          <div className="grid grid-cols-3 gap-3 text-xs">
+            <div>
+              <div className="text-zinc-500 text-[10px]">{t('progress')}</div>
+              <div className="tabular text-zinc-200">{fmt(challengeEval.progressPct, 1)}%</div>
+            </div>
+            <div>
+              <div className="text-zinc-500 text-[10px]">{t('dailyDd')}</div>
+              <div className={`tabular ${
+                challengeEval.dailyDDUsedPct > 80 ? 'text-red-400'
+                : challengeEval.dailyDDUsedPct > 50 ? 'text-amber-400' : 'text-zinc-200'
+              }`}>{fmt(challengeEval.dailyDDUsedPct, 0)}% {t('used')}</div>
+            </div>
+            <div>
+              <div className="text-zinc-500 text-[10px]">{t('totalDd')}</div>
+              <div className={`tabular ${
+                challengeEval.totalDDUsedPct > 80 ? 'text-red-400'
+                : challengeEval.totalDDUsedPct > 50 ? 'text-amber-400' : 'text-zinc-200'
+              }`}>{fmt(challengeEval.totalDDUsedPct, 0)}% {t('used')}</div>
+            </div>
+          </div>
+        </button>
       )}
 
-      <section className="xl:col-span-12 2xl:col-span-16">
-        <PortfolioRiskDashboard dashboard={portfolioRiskDashboard} />
-      </section>
+      {open.length > 0 && (
+        <Panel title={t('openPositionsPanel')} subtitle={`${open.length}/${config.maxOpenPositions}`}>
+          <div className="max-h-[calc(100vh-260px)] divide-y divide-zinc-800 overflow-y-auto scrollbar-hidden">
+            {open.map(t => (
+              <OpenTradeRow
+                key={t.id}
+                t={t}
+                onManage={(trade, currentPrice) => setManagedPosition({ trade, currentPrice })}
+              />
+            ))}
+          </div>
+        </Panel>
+      )}
+
+      <RecentJournalPanel journal={journal} closed={closed} t={t} />
+
+      {curve.length > 1 && (
+        <Panel title={t('equityCurve')} subtitle={t('equityCurveSub')}>
+          <div className="h-56 -mx-2">
+            <ResponsiveContainer width="100%" height="100%">
+              <AreaChart data={curve} margin={{ top: 10, right: 16, left: 0, bottom: 0 }}>
+                <defs>
+                  <linearGradient id="grad-eq" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="0%" stopColor="#f59e0b" stopOpacity={0.4} />
+                    <stop offset="100%" stopColor="#f59e0b" stopOpacity={0} />
+                  </linearGradient>
+                </defs>
+                <CartesianGrid stroke="#27272a" strokeDasharray="2 4" vertical={false} />
+                <XAxis dataKey="idx" tick={{ fill: '#52525b', fontSize: 10 }}
+                       axisLine={{ stroke: '#3f3f46' }} tickLine={false} />
+                <YAxis tick={{ fill: '#52525b', fontSize: 10 }}
+                       axisLine={{ stroke: '#3f3f46' }} tickLine={false}
+                       tickFormatter={(v) => `$${v}`} />
+                <Tooltip contentStyle={{ backgroundColor: '#18181b', border: '1px solid #3f3f46',
+                  borderRadius: 0, fontFamily: 'JetBrains Mono', fontSize: 11 }}
+                  labelStyle={{ color: '#a1a1aa' }} formatter={(v) => [fmtUsd(v), 'Capital']} />
+                <ReferenceLine y={config.initialCapital} stroke="#52525b" strokeDasharray="4 4" />
+                <ReferenceLine y={config.goalCapital} stroke="#10b981"
+                               strokeDasharray="4 4" strokeOpacity={0.5} />
+                <Area type="monotone" dataKey="capital" stroke="#f59e0b"
+                      strokeWidth={2} fill="url(#grad-eq)" />
+              </AreaChart>
+            </ResponsiveContainer>
+          </div>
+        </Panel>
+      )}
+    </>
+  );
+
+  return (
+    <>
+      <TerminalShell main={mainWorkspace} right={rightRail} />
 
       <PositionManagementModal
         trade={managedPosition?.trade || null}
@@ -1410,7 +1393,7 @@ function Dashboard({
           setManagedPosition(null);
         }}
       />
-    </div>
+    </>
   );
 }
 
@@ -1617,16 +1600,9 @@ function Metric({ label, value, sub, accent = 'zinc' }) {
 
 function Panel({ title, subtitle, children, action, className = "" }) {
   return (
-    <div className={`border border-zinc-800 bg-zinc-900/40 ${className}`}>
-      <div className="flex items-center justify-between px-4 py-3 border-b border-zinc-800">
-        <div>
-          <div className="text-[11px] tracking-[0.2em] text-zinc-300">{title}</div>
-          {subtitle && <div className="text-[10px] text-zinc-500 mt-0.5">{subtitle}</div>}
-        </div>
-        {action}
-      </div>
-      <div>{children}</div>
-    </div>
+    <TerminalPanel title={title} subtitle={subtitle} action={action} className={className}>
+      {children}
+    </TerminalPanel>
   );
 }
 
@@ -1782,17 +1758,67 @@ function ClosedTradeRow({ t }) {
   );
 }
 
+function RecentJournalPanel({ journal = [], closed = [], t }) {
+  const journalRows = Array.isArray(journal) ? journal.slice(0, 4) : [];
+  const closedRows = [...closed].reverse().slice(0, Math.max(0, 5 - journalRows.length));
+  const hasRows = journalRows.length > 0 || closedRows.length > 0;
+
+  return (
+    <Panel title={t('journal')} subtitle="Recent discipline log">
+      {!hasRows ? (
+        <div className="p-5 text-sm text-zinc-500">
+          // no journal entries yet
+        </div>
+      ) : (
+        <div className="max-h-[360px] divide-y divide-zinc-800 overflow-y-auto scrollbar-hidden">
+          {journalRows.map((entry) => (
+            <div key={entry.id} className="px-4 py-3">
+              <div className="flex items-center justify-between gap-3">
+                <div className="min-w-0">
+                  <div className="truncate text-sm text-zinc-200">{entry.title || entry.symbol || 'Journal entry'}</div>
+                  <div className="mt-1 truncate text-[11px] text-zinc-500">{entry.summary || entry.reason || 'Position management note'}</div>
+                </div>
+                <span className={`flex-shrink-0 border px-1.5 py-0.5 text-[9px] tracking-wider ${
+                  entry.followedPlan === false
+                    ? 'border-amber-500/40 text-amber-400'
+                    : 'border-emerald-500/30 text-emerald-400'
+                }`}>
+                  {entry.followedPlan === false ? 'PLAN RISK' : 'PLAN'}
+                </span>
+              </div>
+              {entry.timestamp && (
+                <div className="mt-2 text-[10px] tabular text-zinc-600">
+                  {new Date(entry.timestamp).toLocaleString('es-MX')}
+                </div>
+              )}
+            </div>
+          ))}
+
+          {closedRows.map((trade) => (
+            <ClosedTradeRow key={trade.id} t={trade} />
+          ))}
+        </div>
+      )}
+    </Panel>
+  );
+}
+
 // ═══════════════════════════════════════════════════════════════════════════
 // MARKETS — Live prices grid
 // ═══════════════════════════════════════════════════════════════════════════
-function Markets({ watchlist, selectedSymbol, setSelectedSymbol, setTab }) {
+function Markets({ watchlist, selectedSymbol, setSelectedSymbol, setTab, navigateOnSelect = true }) {
   const onClickSymbol = (symbol) => {
     setSelectedSymbol(symbol);
-    setTab('chart');
+    if (navigateOnSelect) setTab('chart');
   };
 
   return (
-    <MarketsSection symbols={watchlist} selectedPair={selectedSymbol} onSelectSymbol={onClickSymbol} />
+    <MarketsSection
+      symbols={watchlist}
+      selectedPair={selectedSymbol}
+      onSelectSymbol={onClickSymbol}
+      compact={!navigateOnSelect}
+    />
   );
 }
 

@@ -35,11 +35,53 @@ function rowFlashClass(row) {
   return "";
 }
 
-export default function MarketsTable({ rows = [], selectedPair, onSelectSymbol }) {
+export default function MarketsTable({ rows = [], selectedPair, onSelectSymbol, compact = false }) {
   if (!rows.length) {
     return (
       <div className="border border-zinc-800 bg-zinc-950/60 p-8 text-center text-sm text-zinc-500">
         No market data available.
+      </div>
+    );
+  }
+
+  if (compact) {
+    return (
+      <div className="max-h-[calc(100vh-300px)] overflow-y-auto border border-zinc-800 bg-black/40 scrollbar-hidden">
+        <div className="grid grid-cols-[32px_minmax(0,1fr)_112px] border-b border-zinc-800 bg-zinc-950/80 px-2 py-2 text-[10px] uppercase tracking-[0.16em] text-zinc-500">
+          <div className="text-right">#</div>
+          <div className="pl-4">Pair</div>
+          <div className="text-right">Price</div>
+        </div>
+        <div className="divide-y divide-zinc-800">
+          {rows.map(row => (
+            <button
+              key={row.pair}
+              onClick={() => onSelectSymbol?.(row.pair)}
+              className={`grid w-full grid-cols-[32px_minmax(0,1fr)_112px] items-center px-2 py-3 text-left transition-colors duration-300 hover:bg-zinc-900/60 ${
+                selectedPair === row.pair ? "bg-cyan-500/10 shadow-[inset_2px_0_0_rgba(34,211,238,0.75)]" : ""
+              } ${rowFlashClass(row)}`}
+            >
+              <div className="text-right text-xs tabular text-zinc-500">{row.rank}</div>
+              <div className="flex min-w-0 items-center gap-2 pl-3">
+                <div className="h-7 w-7 flex-shrink-0 border border-zinc-800 bg-zinc-950 text-center text-[10px] font-bold leading-7 text-zinc-300">
+                  {row.symbol.slice(0, 3)}
+                </div>
+                <div className="min-w-0">
+                  <div className="truncate text-sm font-semibold tabular text-zinc-100">{row.pair}</div>
+                  <div className="truncate text-[10px] text-zinc-500">{row.name}</div>
+                </div>
+              </div>
+              <div className="min-w-0 overflow-hidden text-right">
+                <div className={`block truncate px-2 py-1 text-sm tabular transition-colors duration-300 ${priceFlashClass(row)}`}>
+                  {formatCurrency(row.price)}
+                </div>
+                <div className={`mt-1 text-[10px] tabular ${getPercentTone(row.change1hPct)}`}>
+                  {formatPercent(row.change1hPct)}
+                </div>
+              </div>
+            </button>
+          ))}
+        </div>
       </div>
     );
   }

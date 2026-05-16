@@ -19,7 +19,7 @@ const DEFAULT_MARKET_SYMBOLS = [
   "LTCUSDT",
 ];
 
-export default function MarketsSection({ symbols = DEFAULT_MARKET_SYMBOLS, selectedPair, onSelectSymbol }) {
+export default function MarketsSection({ symbols = DEFAULT_MARKET_SYMBOLS, selectedPair, onSelectSymbol, compact = false }) {
   const normalizedSymbols = useMemo(
     () => [...new Set((symbols.length ? symbols : DEFAULT_MARKET_SYMBOLS).slice(0, 12))],
     [symbols]
@@ -77,7 +77,7 @@ export default function MarketsSection({ symbols = DEFAULT_MARKET_SYMBOLS, selec
             <h2 className="text-sm font-semibold tracking-[0.22em] text-zinc-100">Markets</h2>
           </div>
           <p className="mt-1 text-xs text-zinc-500">
-            Crypto market overview · Binance REST baseline + public WebSocket ticks
+            {compact ? "Market navigation · public WebSocket ticks" : "Crypto market overview · Binance REST baseline + public WebSocket ticks"}
           </p>
         </div>
         <div className="flex flex-col items-start gap-2 sm:items-end">
@@ -118,7 +118,7 @@ export default function MarketsSection({ symbols = DEFAULT_MARKET_SYMBOLS, selec
       )}
 
       {status === "live" && (
-        <MarketsTable rows={markets} selectedPair={selectedPair} onSelectSymbol={onSelectSymbol} />
+        <MarketsTable rows={markets} selectedPair={selectedPair} onSelectSymbol={onSelectSymbol} compact={compact} />
       )}
     </section>
   );
